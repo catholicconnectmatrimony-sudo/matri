@@ -123,6 +123,7 @@ interface UserManagement {
 - **Bulk Email**: Send emails to multiple users
 - **Bulk Export**: Export user data in CSV/Excel format
 - **Bulk Status Change**: Change status of multiple users
+- **Incomplete Profile Outreach**: Filter profiles below completion threshold, assign follow-ups to telecallers, and trigger reminder campaigns.
 
 ## 5. Profile Management
 
@@ -147,11 +148,11 @@ interface ProfileApproval {
 ```
 
 ### **5.2 Photo Management**
-- **Photo Approval**: Approve or reject uploaded photos
-- **Bulk Photo Operations**: Approve/reject multiple photos
-- **Photo Quality Check**: Review photo quality and appropriateness
-- **Photo Replacement**: Request users to replace poor quality photos
-- **Photo Analytics**: Track photo approval rates and quality
+- **Post-Upload Review**: Photos auto-approve for instant profile visibility; admins skim recently uploaded/flagged photos and revoke if necessary.
+- **Flag Handling**: Queue shows photos flagged by users or automated heuristics for further review.
+- **Photo Quality Check**: Review photo quality and appropriateness during post-moderation.
+- **Photo Replacement**: Request users to replace poor quality or policy-violating photos.
+- **Photo Analytics**: Track photo revocation rate and flagged-photo resolution time.
 
 ### **5.3 Profile Quality Management**
 - **Profile Completeness**: Track profile completion rates
@@ -276,6 +277,7 @@ interface UserAnalytics {
 - **Feature Usage Analytics**: Track feature usage and adoption
 - **Search Analytics**: Track search patterns and popular searches
 - **Mobile Analytics**: Track mobile usage and performance
+- **Scheduled Job Health**: View consolidated cron run log (status, duration, last run) sourced from `cron_runs` table; manual retry for failed jobs.
 
 ## 9. Community Management
 

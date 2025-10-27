@@ -22,6 +22,8 @@
 
 ## 2. Pre-Launch Preparation (Weeks 1-12)
 
+> **Timeline bridge:** Weeks 1-8 align with the implementation roadmap in [TECH-STACK.md](./TECH-STACK.md) and represent Months −2 to 0 (build-up to launch). The month-based phases below pick up from Month 0 (launch) and continue through Month 12.
+
 ### **2.1 Technical Preparation**
 - ✅ Complete platform development
 - ✅ Database setup with community-specific fields

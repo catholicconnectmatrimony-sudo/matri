@@ -25,7 +25,7 @@
 | Lenient | Admin-configured cohorts | Maintains access during grace period with nudges instead of locks. | Automatically tightens once grace period ends. |
 | Strict | Admin-configured cohorts | Applies reciprocity immediately after grace period, no soft prompts. | Admin override only. |
 
-**Grace Period:** 24 hours after first login **or** 10 profile views, whichever occurs first. After it expires, each mode’s enforcement column applies unless a relaxation trigger fires.
+**Grace Period:** 24 hours after first login **and** at least 5 profile views (whichever occurs later). Members get a full day to explore even if they browse quickly; enforcement begins when both thresholds are met unless a relaxation trigger fires.
 
 ## 4. Plan Overrides
 | Plan | Default Reciprocity | Override Options |
@@ -91,6 +91,34 @@ CREATE TABLE reciprocity_config (
 - **Caching**: In-memory caching for reciprocity states to improve performance
 - **Background Jobs**: Vercel Cron Jobs (≤12) for daily reciprocity recalculation and cleanup
 - **Admin Tools**: Full admin panel with reciprocity management and override capabilities
+
+### **7.3 API Enforcement Example**
+
+```typescript
+export async function GET(request: Request) {
+  const viewerId = await getUserIdOrThrow(request);
+  const profileId = new URL(request.url).searchParams.get('id');
+  if (!profileId) {
+    return NextResponse.json({ error: 'Missing profile id' }, { status: 400 });
+  }
+
+  const canView = await checkReciprocity({
+    viewerId,
+    profileId,
+    fieldBundle: 'education'
+  });
+
+  if (!canView) {
+    return NextResponse.json({
+      locked: true,
+      message: 'Add your education details to unlock theirs.'
+    }, { status: 403 });
+  }
+
+  const profile = await getProfileWithEducation(profileId);
+  return NextResponse.json(profile);
+}
+```
 
 ## 8. Audit & Logging
 - Log every reciprocity denial with user ID, bundle, timestamp, and reason.

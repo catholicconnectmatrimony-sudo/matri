@@ -62,6 +62,8 @@ interface BuntProfile {
 | **Tulu** | P1 | Mother tongue preference for matching |
 | **Konkani** | P1 | Mother tongue preference for matching |
 
+> **Language note:** Platform interface remains English-only for MVP; local languages capture preferences and power matching logic without UI translation.
+
 ## 4. Geographic Focus
 
 ### **4.1 Primary Cities**

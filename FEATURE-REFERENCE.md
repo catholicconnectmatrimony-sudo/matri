@@ -98,7 +98,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Profile Created By** | ✅ | P1 | Self, Parent, Sibling, Relative, Friend |
 | **Age Validation** | ✅ | P0 | Hard block: Male ≥21, Female ≥18 |
 | **Profile Uniqueness Check** | ✅ | P0 | Prevent duplicate accounts |
-| **Profile Completion Prompts** | ✅ | P1 | Smart reminders for incomplete sections |
+| **Profile Completion Prompts** | ✅ | P1 | Progressive nudges with contextual copy (dashboard + email) when key sections are missing |
 | **Profile Verification Status** | ✅ | P0 | Pending/Approved/Rejected with admin notes |
 | **Profile Edit History** | ✅ | P1 | Track all profile changes with timestamps |
 | **Profile Backup/Restore** | ❌ | P2 | Deferred: Complex implementation not needed for MVP |
@@ -265,8 +265,8 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Photo Upload** | ✅ | P0 | 1-10 photos (plan-based limits) |
 | **Photo Plan Limits** | ✅ | P1 | FREE: 2, Silver: 3, Gold: 5, VIP: 10 |
 | **Photo Upload Requirement** | ✅ | P0 | Cannot browse without ≥1 photo |
-| **Photo Approval Queue** | ✅ | P0 | Auto-approve by default, admin can review later (Supabase Storage) |
-| **Bulk Approve/Reject** | ✅ | P2 | Select multiple photos, approve/reject |
+| **Photo Auto-Approval** | ✅ | P0 | Photos publish instantly; admins post-moderate flagged items |
+| **Flag Review Queue** | ✅ | P1 | Queue of flagged/reported photos for manual review |
 | **Rejection Reasons** | ✅ | P1 | Blurry, Inappropriate, No Face, Fake |
 | **User Notification on Rejection** | ✅ | P1 | Email user with reason, allow re-upload |
 | **Profile Visibility Lock** | ✅ | P0 | Profile not visible until ≥1 photo uploaded |
@@ -315,7 +315,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 ### **Reciprocity Engine - Field Rules**
 
-**Grace Period for New Users**: First 24 hours OR first 10 profile views (whichever comes first), then strict reciprocity applies.
+**Grace Period for New Users**: First 24 hours **and** first 5 profile views (whichever occurs later), then strict reciprocity applies.
 
 | Field | Your Contribution | What You Can See |
 |-------|-------------------|------------------|
@@ -425,7 +425,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Religion Visibility Rules** | ✅ | P0 | Default: same religion, optional opt-in to others (user-controlled) |
 | **Caste Visibility Rules** | ✅ | P1 | Default: same caste, option: other castes (user-controlled) |
 | **Advanced SEO** | ✅ | P1 | Schema.org, social previews, per-subfolder branding |
-| **Local Language Support** | ❌ | P2 | Deferred: English is sufficient for target audience |
+| **Local Language Support** | ❌ | P2 | UI remains English-only; mother-tongue field powers matching |
 | **Community Success Stories** | ✅ | P1 | Local success stories and testimonials |
 
 ---
@@ -545,7 +545,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Robots.txt Management** | ✅ | P1 | Configure crawler access |
 | **Graceful Shutdown** | ✅ | P0 | Handle ongoing requests during deployment |
 | **Operational Configuration Controls** | ✅ | P1 | Admin tools for SMS providers, plan limits, and religion/community master data |
-| **Scheduled Jobs (Vercel Cron)** | ✅ | P1 | Daily "Who Viewed" digest email and other low-frequency tasks |
+| **Scheduled Jobs (Vercel Cron)** | ✅ | P1 | Consolidated ≤8 job schedule with admin-visible `cron_runs` log (includes weekly incomplete-profile reminder emails)
 | **Database Optimization** | ✅ | P1 | Index optimization, query performance monitoring |
 | **CDN Integration** | ❌ | P2 | Deferred: Supabase built-in CDN sufficient for MVP |
 | **Backup & Recovery** | ❌ | P2 | Deferred: Supabase handles basic backups |

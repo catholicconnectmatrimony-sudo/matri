@@ -96,6 +96,8 @@
 | **Preview** | Vercel preview deploys + Supabase **Dev** project | Auto-deploy on PRs, uses shared dev data and secrets |
 | **Production** | Vercel + Supabase **Prod** project | Live traffic; enable feature flags/maintenance modes before releases |
 
+> **Environment note:** MVP operates with two Supabase projects (Dev shared by local + preview, Prod for live traffic). Revisit a dedicated staging project once we exceed free-tier quotas or introduce destructive preview tests.
+
 ## 13. Cost Snapshot (Monthly Estimates)
 | Item | Est. Cost |
 |------|-----------|
@@ -241,9 +243,9 @@ CREATE TABLE sub_communities (
 ## 15. Operational Practices (Vercel Hobby + Supabase Free)
 
 - **Lazy realtime connections**: Only subscribe to Supabase Realtime channels when a conversation is open; disconnect after 5–10 minutes of inactivity to stay well under the free-tier 500 concurrent cap.
-- **Message retention**: Keep 6–12 months of chat history in the primary `messages` table. Export older data to Supabase Storage (CSV/JSON) if database size approaches 400 MB.
+- **Message retention**: Keep 6–12 months of chat history in the primary `messages` table. Run the weekly cleanup job below once growth accelerates; export to Supabase Storage only if long-term archives are required.
 - **Media handling**: Store photos and attachments in Supabase Storage; persist only metadata and `storage_path` keys in Postgres. Use signed URLs for access.
-- **Scheduled work**: Use Vercel Cron (≤12 jobs) for digests and cleanup. For heavier processing, leverage Supabase Edge Functions triggered by webhooks or scheduled via Supabase.
+-- **Scheduled work**: Use the consolidated Vercel Cron schedule (≤8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin “Operations” widget can show last run, duration, and status.
 - **Security**: Enforce Row Level Security on all tables. Supabase policies govern reciprocity visibility and admin overrides. Manage secrets via Vercel/Supabase dashboards.
 
 ## 16. Monitoring & Upgrade Triggers
@@ -258,7 +260,52 @@ CREATE TABLE sub_communities (
 
 Automate weekly metric snapshots (Supabase Edge Function or GitHub Action) so trends are visible before thresholds are hit.
 
+### 16.1 Consolidated Vercel Cron schedule
+
+| Window | Cron Expression | Tasks batched inside handler |
+|--------|-----------------|-------------------------------|
+| Morning (09:00) | `0 9 * * *` | Match recommendations, birthday nudges, premium expiry alerts |
+| Midday (10:00) | `0 10 * * *` | Profile verification reminders |
+| Digest (12:00) | `0 12 * * *` | Daily “Who viewed me” digest email |
+| Afternoon (18:00) | `0 18 * * *` | Re-engagement emails, inactive user nudges |
+| Midnight (00:00) | `0 0 * * *` | Analytics snapshot, sitemap regeneration |
+| Early Morning (02:00) | `0 2 * * *` | Database cleanup, backup verification checks |
+| Photo moderation (every 6h) | `0 */6 * * *` | Queue flagged-photo review summary (no per-upload polling) |
+| Weekly (Sun 10:00) | `0 10 * * SUN` | Success story reminders, partner follow-ups |
+
+Each job writes to `cron_runs(job_name, started_at, finished_at, status, notes)` so admins can audit failures or rerun tasks manually.
+
+### 16.2 Automated cleanup helpers
+
+```sql
+-- Trim chat history after 12 months (run weekly via cron)
+INSERT INTO messages_archive
+SELECT * FROM messages
+WHERE created_at < NOW() - INTERVAL '12 months';
+
+DELETE FROM messages
+WHERE created_at < NOW() - INTERVAL '12 months';
+```
+
+```typescript
+// Weekly Supabase Edge Function invoked by cron to monitor DB size
+export const checkDatabaseSize = async () => {
+  const { data, error } = await supabase.rpc('get_db_size');
+  if (error) throw error;
+
+  if (data.size_mb >= 400) {
+    await notifyAdmins({
+      channel: 'system',
+      title: 'Database approaching free-tier limit',
+      body: `Current size: ${data.size_mb} MB`
+    });
+  }
+};
+```
+
 ## 17. Implementation Roadmap
+
+> Timeline context: These four phases cover the **eight-week build cycle leading into launch (Month −2 to Month 0)**. Post-launch growth phases live in [LAUNCH-STRATEGY.md](./LAUNCH-STRATEGY.md) and pick up from Month 1 onward.
 
 ### **Phase 1 – Foundation (Weeks 1-2)**
 - Scaffold Next.js 16 (App Router, TypeScript, Tailwind, shadcn/ui).
