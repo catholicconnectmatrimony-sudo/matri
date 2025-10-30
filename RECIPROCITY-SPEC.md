@@ -50,6 +50,10 @@ Premium bypass grants viewing rights but does not auto-fill the member's own pro
 ### 5.3 Privacy Dashboard
 - Display per-field status: Shared / Locked / Premium Only.
 - Provide quick edit links and reciprocity progress bar.
+- Photo deletions immediately re-check reciprocity; if approved photo count drops below matched users' photo count, viewing locks until restored. Restoring the minimum photo count re-opens access instantly.
+- When the grace period ends, show a banner toast (“Reciprocity now active”) and enforce restrictions on the next navigation to avoid jarring interrupts.
+- When another member has more photos than the viewer, expose photos in chronological upload order up to the viewer's contribution count.
+- Photo privacy tiers (e.g., family-only album) remain respected alongside reciprocity; conservative users can limit visibility without bypassing reciprocity checks.
 
 ## 6. Admin Controls
 - Global reciprocity toggle (ON/OFF) with confirmation modal; OFF state logs admin ID + reason and bypasses enforcement for all users.

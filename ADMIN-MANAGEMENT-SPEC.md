@@ -19,7 +19,10 @@
 | **Content Management** | Full | Manage all content, success stories, community pages |
 | **Analytics Access** | Full | View all analytics and reports |
 | **System Settings** | Full | Configure platform settings, features, and policies |
+| **Support Channels**: Configure support email, hotline, WhatsApp Business number (future), and escalation rules. |
 | **Community Management** | Full | Manage community-specific features and content |
+| **Red Flag Dashboard**: View and manage red-flagged users, profiles, and content |
+| **Churn Signals**: View and manage churn signals for users and profiles |
 
 ### **2.2 Admin (Community Manager)**
 | Permission | Access Level | Description |
@@ -278,6 +281,7 @@ interface UserAnalytics {
 - **Search Analytics**: Track search patterns and popular searches
 - **Mobile Analytics**: Track mobile usage and performance
 - **Scheduled Job Health**: View consolidated cron run log (status, duration, last run) sourced from `cron_runs` table; manual retry for failed jobs.
+- **Churn Signals Panel**: Highlight members inactive for 14+ days or stuck below 50% completeness; export to telecaller outreach list.
 
 ## 9. Community Management
 
@@ -344,6 +348,7 @@ interface ReportManagement {
 - **Content Filtering**: Filter inappropriate content
 - **Spam Prevention**: Prevent spam and fake profiles
 - **Safety Guidelines**: Manage safety guidelines and policies
+- **Red Flag Dashboard**: Detect duplicate accounts (device/email overlap), rapid interest spikes, or unusual activity; surface investigation queue with audit notes.
 
 ## 11. System Configuration
 

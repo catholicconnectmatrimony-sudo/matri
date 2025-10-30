@@ -10,8 +10,8 @@
 ## 2. Frontend (Web)
 | Component | Choice | Notes |
 |-----------|--------|-------|
-| Framework | **Next.js 16** (React 19.2, App Router) | SSR/ISR for SEO-heavy landing pages, SSG for static content |
-| Styling | **Tailwind CSS 4.0 + Radix UI + shadcn/ui** | Utility-first styling, accessible primitives, component library |
+| Framework | **Next.js 16.0.1** (React 19.2.0, App Router) | SSR/ISR for SEO-heavy landing pages, SSG for static content |
+| Styling | **Tailwind CSS 4.1.16 + Radix UI + shadcn/ui** | Utility-first styling, accessible primitives, component library |
 | State/Data | **TanStack Query v5 + Zustand** | Caching, background refetch, offline revalidation, state management |
 | Validation | **Zod + React Hook Form** | Type-safe schemas, granular form control |
 | Authentication | **Supabase Auth** | Session handling via JWT, email/phone verification |
@@ -47,7 +47,7 @@
 
 ## 6. Media Handling
 - **Upload**: Supabase Storage with signed URLs
-- **Processing**: Client-side compression and resizing
+- **Processing**: Server-side pipeline (Sharp) resizes to max 1920×1920, converts to WebP (fallback JPEG 85 quality), strips EXIF, and applies CCM watermark before upload
 - **CDN**: Supabase built-in CDN
 - **Moderation**: Manual admin approval (auto-approve by default)
 - **Watermarking**: Client-side watermarking for security
@@ -103,10 +103,12 @@
 |------|-----------|
 | Vercel Hobby | $0 |
 | Supabase Free | $0 |
+| Resend (Starter tier) | $20 |
+| Fast2SMS | $10 |
+| Monitoring (BetterUptime + alerts) | $5 |
 | Razorpay fees | Variable (per transaction) |
-| Resend + Fast2SMS | $20-30 |
 | Sentry + PostHog | $0 (free tiers) |
-| Total Core Spend | **~$20-30/month** |
+| Total Core Spend | **~$35-40/month** |
 
 > Costs scale with usage; start FREE, pay only when you exceed limits
 
@@ -245,7 +247,9 @@ CREATE TABLE sub_communities (
 - **Lazy realtime connections**: Only subscribe to Supabase Realtime channels when a conversation is open; disconnect after 5–10 minutes of inactivity to stay well under the free-tier 500 concurrent cap.
 - **Message retention**: Keep 6–12 months of chat history in the primary `messages` table. Run the weekly cleanup job below once growth accelerates; export to Supabase Storage only if long-term archives are required.
 - **Media handling**: Store photos and attachments in Supabase Storage; persist only metadata and `storage_path` keys in Postgres. Use signed URLs for access.
--- **Scheduled work**: Use the consolidated Vercel Cron schedule (≤8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin “Operations” widget can show last run, duration, and status.
+- **Scheduled work**: Use the consolidated Vercel Cron schedule (≤8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin “Operations” widget can show last run, duration, and status.
+- **Bandwidth planning**: Track Vercel bandwidth weekly; Hobby tier caps at 100 GB/month. Trigger upgrade to Vercel Pro once sustained usage exceeds ~80 GB/month (≈300–500 light MAU or 200–300 average MAU).
+- **Storage planning**: Supabase 1 GB free tier supports ~1,000 users with ≤2 compressed photos each (<500 KB). Set alert at 900 MB; plan upgrade to Supabase Pro or external storage when thresholds are hit.
 - **Security**: Enforce Row Level Security on all tables. Supabase policies govern reciprocity visibility and admin overrides. Manage secrets via Vercel/Supabase dashboards.
 
 ## 16. Monitoring & Upgrade Triggers
@@ -275,6 +279,29 @@ Automate weekly metric snapshots (Supabase Edge Function or GitHub Action) so tr
 
 Each job writes to `cron_runs(job_name, started_at, finished_at, status, notes)` so admins can audit failures or rerun tasks manually.
 
+#### Cron task resilience example
+
+```typescript
+const morningTasks = async () => {
+  const tasks = [
+    { name: 'match-recommendations', run: sendMatchRecommendations },
+    { name: 'birthday-notifications', run: sendBirthdayNotifications },
+    { name: 'premium-expiry-alerts', run: sendPremiumExpiryAlerts }
+  ];
+
+  const results = await Promise.allSettled(tasks.map(t => t.run()));
+
+  await logCronRun({
+    job_name: 'morning-tasks',
+    tasks_completed: results.map((result, index) => ({
+      task: tasks[index].name,
+      status: result.status,
+      error: result.status === 'rejected' ? String(result.reason) : null
+    }))
+  });
+};
+```
+
 ### 16.2 Automated cleanup helpers
 
 ```sql
@@ -302,6 +329,18 @@ export const checkDatabaseSize = async () => {
   }
 };
 ```
+
+### 16.3 Monitoring & alerting
+
+- **Uptime**: BetterUptime free tier (10 monitors) hitting key routes; alerts sent via admin operations panel widgets and email.
+- **Error alerts**: Sentry + Vercel function errors routed to admin email list; surfaced in admin panel incident feed for follow-up.
+- **Bandwidth & storage**: Weekly cron runs `checkProjectUsage` to notify at 80 GB bandwidth or 900 MB storage.
+- **Cron dashboard**: Admin panel surfaces `cron_runs` data with retry option for failed tasks.
+
+### 16.4 Upcoming implementation tickets
+
+- **Server-side image processing (Sharp)**: Build `/api/upload/photo` route handling resize → WebP/JPEG conversion → watermark → Supabase upload; adjust client flow to call API and add telemetry.
+- **Chat idle timeout enforcement**: Add Supabase listener wrapper that auto-disconnects after 10 minutes idle, refreshes tokens every 5 minutes, and logs disconnect reasons for auditing.
 
 ## 17. Implementation Roadmap
 

@@ -47,7 +47,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 - **Hosting Plan:** Runs entirely on Vercel Hobby + Supabase Free (limited storage, Vercel Cron ≤12 jobs).
 
 ### 🧱 Tech Stack Snapshot
-- **Frontend:** Next.js 16 (React 19) on Vercel Hobby with Tailwind + Radix UI + shadcn/ui.
+- **Frontend:** Next.js 16.0.1 (React 19.2.0) on Vercel Hobby with Tailwind CSS 4.1.16 + Radix UI + shadcn/ui.
 - **Backend/Data:** Supabase Free (Postgres, Auth, Storage, Edge Functions) within quota limits.
 - **APIs/Workers:** Vercel serverless routes and Supabase Edge Functions (no scheduled jobs).
 - **Payments & Comms:** Razorpay (primary), PhonePe (backup), Resend email, Fast2SMS SMS.
@@ -396,6 +396,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Recently Viewed Me** | ✅ | P1 | Dashboard card summarizing recent visitors (no external alerts) |
 | **Profile Visit Alerts** | ✅ | P2 | Highlighted banner in dashboard when priority profiles revisit |
 | **New View Indicator** | ✅ | P1 | Bell icon badge increments when fresh views arrive (Supabase Realtime) |
+| **Churn Prediction Signals** | ✅ | P2 | Flag users with 14+ days inactivity or stalled onboarding; feed telecaller outreach list |
 
 ---
 
@@ -485,6 +486,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **User Impersonation** | ❌ | P2 | Not included (security risk) |
 | **Bulk User Operations** | ✅ | P1 | Bulk activate, suspend, delete, or modify user accounts |
 | **Admin Dashboard Analytics** | ❌ | P2 | Deferred: Basic metrics sufficient for MVP |
+| **Red Flag Dashboard** | ✅ | P1 | Spot duplicate accounts, rapid interest spikes, and suspicious activity with audit trail |
 | **Admin Notification System** | ❌ | P2 | Deferred: Manual monitoring sufficient for MVP |
 | **Admin Role Permissions** | ✅ | P0 | Granular permissions for different admin roles |
 
@@ -515,9 +517,11 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Not Interested/Hide** | ✅ | P0 | Mark profiles as not interested |
 | **Accessibility Features** | ✅ | P0 | Screen reader, keyboard nav, ARIA labels |
 | **Relationship Status Update** | ✅ | P1 | Users can mark engaged/married to pause visibility |
+| **Match Closure Flow** | ✅ | P1 | “Found a match” wizard: choose status (Dating/Engaged/Married), auto-hide profile, capture testimonial |
 | **Reciprocity Tips Card** | ✅ | P1 | Dashboard panel with contextual prompts (e.g., "Upload 2 more photos to unlock 2 more") |
 | **User Onboarding Flow** | ✅ | P0 | Guided tour for new users with feature highlights |
 | **Help & Support Center** | ✅ | P1 | FAQ, video tutorials, and contact support |
+| **WhatsApp Support Chat** | ✅ | P2 | Route support queries through WhatsApp Business API with admin inbox sync |
 | **User Feedback System** | ❌ | P2 | Deferred: Contact form sufficient for MVP |
 | **Accessibility Compliance** | ✅ | P0 | WCAG 2.1 AA compliance for screen readers and keyboard navigation |
 
@@ -530,6 +534,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Marketing Content CMS** | ✅ | P1 | Manage success stories, testimonials, FAQ, and blog content |
 | **Contact Form** | ✅ | P0 | Static contact page (sends to admin email) |
 | **WhatsApp Integration** | ✅ | P1 | Floating support button + profile sharing |
+| **WhatsApp Share Tracking** | ✅ | P1 | Share links include campaign tracking + short URLs for analytics |
 
 ---
 
@@ -547,6 +552,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Operational Configuration Controls** | ✅ | P1 | Admin tools for SMS providers, plan limits, and religion/community master data |
 | **Scheduled Jobs (Vercel Cron)** | ✅ | P1 | Consolidated ≤8 job schedule with admin-visible `cron_runs` log (includes weekly incomplete-profile reminder emails)
 | **Database Optimization** | ✅ | P1 | Index optimization, query performance monitoring |
+| **Chat Idle Timeout** | ✅ | P1 | Auto-disconnect chat sessions after 10 minutes idle; connection pooling to avoid exceeding Supabase limits |
 | **CDN Integration** | ❌ | P2 | Deferred: Supabase built-in CDN sufficient for MVP |
 | **Backup & Recovery** | ❌ | P2 | Deferred: Supabase handles basic backups |
 | **Performance Monitoring** | ❌ | P2 | Deferred: Basic monitoring sufficient for MVP |
