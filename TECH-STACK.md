@@ -244,7 +244,85 @@ CREATE TABLE sub_communities (
 
 ## 15. Operational Practices (Vercel Hobby + Supabase Free)
 
-- **Lazy realtime connections**: Only subscribe to Supabase Realtime channels when a conversation is open; disconnect after 5–10 minutes of inactivity to stay well under the free-tier 500 concurrent cap.
+- **Lazy realtime connections**: Only subscribe to Supabase Realtime channels when a conversation is open; disconnect after 5–10 minutes of inactivity to stay well under the free-tier 500 concurrent cap. Pool subscriptions per signed-in member instead of per chat tab.
+- **Pooled chat channel manager**: Wrap Supabase Realtime in a singleton helper so every chat session shares one channel per user (cuts 5-10× connections). Reconnection is instant on the next chat action. The helper tracks global activity and only tears down after extended idle (default 20 minutes, configurable per environment) so active users never notice a disconnect.
+
+```typescript
+// apps/web/lib/realtime/SupabaseRealtimeManager.ts
+class SupabaseRealtimeManager {
+  private static channel: RealtimeChannel | null = null;
+  private static callbacks = new Map<string, (payload: MessageRow) => void>();
+  private static activeChats = new Map<string, number>();
+  private static idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly IDLE_TIMEOUT_MS = 1_200_000; // 20 minutes
+
+  static subscribe(chatId: string, cb: (payload: MessageRow) => void) {
+    this.callbacks.set(chatId, cb);
+    this.touch(chatId);
+
+    if (!this.channel) {
+      const channelId = `messages-${currentUserId}`;
+      this.channel = supabase
+        .channel(channelId)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${currentUserId}`
+        }, this.dispatch)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${currentUserId}`
+        }, this.dispatch)
+        .subscribe();
+    }
+  }
+
+  static unsubscribe(chatId: string) {
+    this.callbacks.delete(chatId);
+    this.activeChats.delete(chatId);
+    this.scheduleIdleTearDown();
+  }
+
+  private static dispatch = (payload: PostgresChangesPayload<MessageRow>) => {
+    this.touch(payload.new.chat_id);
+    this.callbacks.get(payload.new.chat_id)?.(payload.new);
+  };
+
+  private static touch(chatId: string) {
+    this.activeChats.set(chatId, Date.now());
+    this.scheduleIdleTearDown();
+  }
+
+  private static scheduleIdleTearDown() {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    if (this.activeChats.size === 0) {
+      this.idleTimer = setTimeout(this.teardown, 30_000); // fast cleanup when empty
+      return;
+    }
+
+    this.idleTimer = setTimeout(() => {
+      const cutoff = Date.now() - this.IDLE_TIMEOUT_MS;
+      const hasRecentActivity = Array.from(this.activeChats.values())
+        .some(lastActive => lastActive >= cutoff);
+      if (!hasRecentActivity) this.teardown();
+    }, this.IDLE_TIMEOUT_MS);
+  }
+
+  private static teardown = async () => {
+    if (!this.channel) return;
+    await this.channel.unsubscribe();
+    this.channel = null;
+    this.callbacks.clear();
+    this.activeChats.clear();
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
+  };
+}
+```
+
 - **Message retention**: Keep 6–12 months of chat history in the primary `messages` table. Run the weekly cleanup job below once growth accelerates; export to Supabase Storage only if long-term archives are required.
 - **Media handling**: Store photos and attachments in Supabase Storage; persist only metadata and `storage_path` keys in Postgres. Use signed URLs for access.
 - **Scheduled work**: Use the consolidated Vercel Cron schedule (≤8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin “Operations” widget can show last run, duration, and status.
@@ -253,7 +331,6 @@ CREATE TABLE sub_communities (
 - **Security**: Enforce Row Level Security on all tables. Supabase policies govern reciprocity visibility and admin overrides. Manage secrets via Vercel/Supabase dashboards.
 
 ## 16. Monitoring & Upgrade Triggers
-
 | Metric | Monitor In | Threshold | Action |
 |--------|------------|-----------|--------|
 | Database size | Supabase usage | ≥400 MB | Start archiving or upgrade to Supabase Pro |
