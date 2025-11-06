@@ -128,7 +128,55 @@ interface UserManagement {
 - **Bulk Status Change**: Change status of multiple users
 - **Incomplete Profile Outreach**: Filter profiles below completion threshold, assign follow-ups to telecallers, and trigger reminder campaigns.
 
-## 5. Profile Management
+## 5. Community & URL Management
+
+### **5.1 Community Management**
+| Feature | Description | Access Level |
+|---------|-------------|--------------|
+| **Community Creation** | Add new communities with religion association | Super Admin |
+| **URL Structure** | Manage URL slugs for all communities | Super Admin |
+| **Community Metadata** | Edit display names, descriptions, and images | Admin+ |
+| **Sub-communities** | Manage hierarchical community structures | Admin+ |
+| **Bulk Import** | Import communities via CSV with religion mapping | Super Admin |
+| **URL Redirects** | Manage 301 redirects for URL changes | Super Admin |
+| **Canonical URLs** | Set canonical URLs for community pages | Admin+ |
+
+### **5.2 URL Management**
+```typescript
+interface URLManagement {
+  currentURL: string;
+  redirectsTo?: string;
+  isCanonical: boolean;
+  lastModified: Date;
+  modifiedBy: string;
+  status: 'active' | 'redirect' | 'archived';
+}
+```
+
+### **5.3 Community Schema**
+```typescript
+interface Community {
+  id: string;
+  name: string;
+  slug: string;
+  religion: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  description: string;
+  seoTitle: string;
+  metaDescription: string;
+  featuredImage: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+  updatedBy: string;
+}
+```
+
+## 6. Profile Management
 
 ### **5.1 Profile Approval Queue**
 ```typescript
@@ -390,44 +438,54 @@ interface PlatformSettings {
 - **Notification Settings**: Configure notification preferences
 - **Communication Settings**: Configure communication channels
 
-## 12. Admin User Experience
+## 12. SEO & URL Settings
 
-### **12.1 Easy-to-Use Interface**
+### **12.1 URL Configuration**
+| Setting | Description | Access Level |
+|---------|-------------|--------------|
+| **Base Domain** | Primary domain configuration | Super Admin |
+| **URL Structure** | Pattern: `/{religion}/{community}/{sub-community?}` | Super Admin |
+| **Trailing Slash** | Enable/disable trailing slashes | Super Admin |
+| **URL Case Sensitivity** | Configure case sensitivity | Super Admin |
+| **Canonical URL** | Global canonical URL settings | Super Admin |
+
+### **12.2 SEO Management**
+- **Meta Tags**: Manage default meta tags for all pages
+- **Structured Data**: Configure JSON-LD templates
+- **Sitemap**: Control sitemap generation settings
+- **Robots.txt**: Customize robot directives
+- **Hreflang**: Configure language/regional targeting
+
+### **12.3 Redirect Management**
+| Feature | Description | Access Level |
+|---------|-------------|--------------|
+| **301 Redirects** | Manage permanent redirects | Admin+ |
+| **404 Monitoring** | Track and fix broken links | Admin+ |
+| **Bulk Redirects** | Import/export redirects | Super Admin |
+| **Regex Support** | Advanced pattern matching | Super Admin |
+
+## 13. Admin User Experience
+
+### **13.1 Easy-to-Use Interface**
 - **Intuitive Navigation**: Simple and clear navigation
 - **Quick Actions**: One-click access to common tasks
 - **Bulk Operations**: Efficient bulk operations for multiple items
 - **Search & Filters**: Powerful search and filtering capabilities
 - **Responsive Design**: Works well on desktop and mobile
 
-### **12.2 Non-Technical User Support**
+### **13.2 Non-Technical User Support**
 - **Help Documentation**: Comprehensive help documentation
 - **Video Tutorials**: Video tutorials for common tasks
 - **Tooltips & Help**: Contextual help and tooltips
 - **Support Contact**: Easy access to technical support
 - **Training Materials**: Training materials for admin users
 
-### **12.3 Efficiency Features**
+### **13.3 Efficiency Features**
 - **Keyboard Shortcuts**: Keyboard shortcuts for power users
 - **Customizable Dashboard**: Customizable dashboard widgets
 - **Saved Searches**: Save frequently used searches
 - **Quick Filters**: Quick access to common filters
 - **Export Functions**: Easy data export and reporting
-
-## 13. Security & Access Control
-
-### **13.1 Admin Authentication**
-- **Secure Login**: Secure admin login with 2FA
-- **Session Management**: Secure session management
-- **IP Restrictions**: Restrict admin access by IP address
-- **Activity Logging**: Log all admin activities
-- **Access Monitoring**: Monitor admin access and activities
-
-### **13.2 Data Protection**
-- **Data Encryption**: Encrypt sensitive data
-- **Access Logs**: Maintain access logs for audit
-- **Data Backup**: Regular data backups
-- **Privacy Protection**: Protect user privacy and data
-- **Compliance**: Ensure compliance with data protection laws
 
 ## 14. Mobile Admin Access
 
@@ -445,8 +503,91 @@ interface PlatformSettings {
 - **Analytics View**: View basic analytics on mobile
 - **Emergency Actions**: Emergency actions like user suspension
 
+## 15. System Health Monitoring
+
+### **15.1 Critical Metrics**
+```typescript
+// Essential metrics for Vercel Hobby + Supabase Free
+interface SystemHealth {
+  database: {
+    size_mb: number;      // Current database size
+    percent_used: number; // % of 500MB limit
+    row_count: number;    // Approx. rows
+    connections: number;  // Active connections
+  };
+  storage: {
+    used_gb: number;     // Used storage
+    percent_used: number; // % of 1GB limit
+    file_count: number;   // Total files
+  };
+  updated_at: string;    // Last metrics update
+}
+
+// Alert thresholds (conservative for free tier)
+const ALERTS = {
+  database: {
+    size_mb: 400,       // 80% of 500MB
+    connections: 40     // 80% of 50
+  },
+  storage: {
+    gb: 0.8,           // 80% of 1GB
+    files: 5000        // Arbitrary high file count
+  }
+};
+```
+
+### **15.2 Implementation**
+1. **SQL Function** (Run in Supabase SQL Editor):
+   ```sql
+   create or replace function get_health_metrics()
+   returns json as $$
+     select json_build_object(
+       'size_mb', pg_database_size(current_database()) / (1024 * 1024.0),
+       'row_count', (
+         select sum(reltuples)::bigint
+         from pg_class
+         where relkind = 'r' and relname not like 'pg_%' and relname not like 'sql_%'
+       ),
+       'connections', (
+         select count(*) from pg_stat_activity where pid <> pg_backend_pid()
+       )
+     );
+   $$ language sql stable;
+   ```
+
+2. **Metrics Collection** (Add to existing API route):
+   ```typescript
+   // Example: Add to /api/admin/health
+   export async function GET() {
+     const { data: metrics } = await supabase.rpc('get_health_metrics');
+     return Response.json({
+       database: {
+         size_mb: Math.round(metrics.size_mb * 100) / 100,
+         percent_used: Math.min(100, Math.round((metrics.size_mb / 500) * 100)),
+         row_count: metrics.row_count,
+         connections: metrics.connections
+       },
+       storage: {
+         // Implement storage metrics collection
+         used_gb: 0,
+         percent_used: 0,
+         file_count: 0
+       },
+       updated_at: new Date().toISOString()
+     });
+   }
+   ```
+
+### **15.3 Monitoring**
+- **Auto-refresh**: Every 5 minutes
+- **Access Control**: Admin users only
+- **Storage**: 
+  - Monitor via Supabase dashboard
+  - Manual checks for large files
+- **API Usage**: Track in Vercel dashboard
+
 ---
 
-**Last Updated:** December 2024  
-**Document Version:** 1.0  
-**Next Review:** January 2025
+**Last Updated:** November 2025  
+**Document Version:** 2.2  
+**Next Review:** December 2025

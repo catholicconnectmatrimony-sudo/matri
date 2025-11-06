@@ -6,6 +6,9 @@
 - **APIs**: Vercel Serverless Functions + Supabase Edge Functions
 - **Mobile Clients**: Responsive web-first design
 - **Observability**: Sentry (error tracking) + Supabase logs + PostHog (analytics)
+- **System Health**: Real-time monitoring of database, storage, and API performance
+- **SEO**: Structured data, dynamic sitemaps, and OpenGraph integration
+- **Freemium Model**: Conversion tracking and upgrade prompts
 
 ## 2. Frontend (Web)
 | Component | Choice | Notes |
@@ -330,7 +333,108 @@ class SupabaseRealtimeManager {
 - **Storage planning**: Supabase 1 GB free tier supports ~1,000 users with ≤2 compressed photos each (<500 KB). Set alert at 900 MB; plan upgrade to Supabase Pro or external storage when thresholds are hit.
 - **Security**: Enforce Row Level Security on all tables. Supabase policies govern reciprocity visibility and admin overrides. Manage secrets via Vercel/Supabase dashboards.
 
-## 16. Monitoring & Upgrade Triggers
+## 16. System Health Monitoring
+
+### Health Dashboard (`/admin/health`)
+```typescript
+interface SystemHealth {
+  database: {
+    size_mb: number;
+    usage_percent: number; // vs 500 MB limit
+    top_tables: Array<{ name: string; size_mb: number }>;
+  };
+  storage: {
+    size_gb: number;
+    usage_percent: number; // vs 1 GB limit
+    largest_files: Array<{ path: string; size_mb: number }>;
+  };
+  realtime: {
+    active_connections: number;
+    usage_percent: number; // vs 500 limit
+  };
+  api_performance: {
+    p50_ms: number;
+    p95_ms: number;
+    error_rate: number;
+  };
+}
+
+// Alert thresholds
+const ALERTS = {
+  database_size: 400,  // MB - Alert at 80%
+  storage_size: 0.8,   // GB - Alert at 80%
+  connections: 400,    // Alert at 80%
+  error_rate: 0.05     // 5% error rate
+};
+```
+
+## 17. SEO Strategy Implementation
+
+### Structured Data (Schema.org)
+- **WebSite Schema**: For community pages and search functionality
+- **Person Schema**: For user profiles
+- **BreadcrumbList**: For navigation structure
+- **FAQPage**: For common questions
+
+### Dynamic Sitemaps
+- Generate sitemaps for profiles and communities
+- Update sitemap on profile creation/update
+- Community-specific sitemaps with priority scoring
+
+### OpenGraph Implementation
+- Dynamic OpenGraph images per community
+- Profile-specific metadata for sharing
+- Local business schema for regional SEO
+
+## 18. Freemium Conversion System
+
+### Conversion Events Tracking
+```sql
+CREATE TABLE conversion_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  event_type VARCHAR(50) NOT NULL, -- 'interest_limit', 'contact_locked', 'chat_disabled'
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for faster lookups
+CREATE INDEX idx_conversion_events_user_created ON conversion_events(user_id, created_at);
+```
+
+### Upgrade Opportunity Detection
+```typescript
+const checkConversionOpportunity = async (userId: string) => {
+  const { data: events, error } = await supabase
+    .from('conversion_events')
+    .select('event_type')
+    .eq('user_id', userId)
+    .gte('created_at', new Date(Date.now() - 86400000).toISOString());
+
+  if (error) {
+    console.error('Error checking conversion events:', error);
+    return null;
+  }
+
+  // Trigger upgrade prompt after 3+ events in 24h
+  if (events && events.length >= 3) {
+    return {
+      showUpgradeModal: true,
+      message: "You've hit free limits multiple times today. Upgrade to Silver for unlimited access!"
+    };
+  }
+  return null;
+};
+```
+
+### Conversion Funnel Points
+1. **Interest Limit Reached**
+2. **Contact View Blocked**
+3. **Chat Disabled**
+4. **Profile View Limit**
+5. **Search Result Limit**
+
+## 19. Monitoring & Upgrade Triggers
 | Metric | Monitor In | Threshold | Action |
 |--------|------------|-----------|--------|
 | Database size | Supabase usage | ≥400 MB | Start archiving or upgrade to Supabase Pro |

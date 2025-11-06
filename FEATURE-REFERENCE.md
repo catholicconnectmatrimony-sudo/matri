@@ -263,7 +263,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Photo Upload** | ✅ | P0 | 1-10 photos (plan-based limits) |
-| **Photo Plan Limits** | ✅ | P1 | FREE: 2, Silver: 3, Gold: 5, VIP: 10 |
+| **Photo Plan Limits** | ✅ | P1 | Free: 2, Paid: 5, VIP: 10 |
 | **Photo Upload Requirement** | ✅ | P0 | Cannot browse without ≥1 photo |
 | **Photo Auto-Approval** | ✅ | P0 | Photos publish instantly; admins post-moderate flagged items |
 | **Flag Review Queue** | ✅ | P1 | Queue of flagged/reported photos for manual review |
@@ -285,8 +285,8 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Reciprocity Engine** | ✅ | P1 | Field-level reciprocal visibility: see only what you share (photos, education, occupation, income, family, horoscope - all independent) |
-| **Reciprocity Strict Mode** | ✅ | P2 | Admin toggle: Strict/Lenient/Gradual |
-| **Plan-based Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan (e.g., Silver: ON, Platinum: OFF) |
+| **Reciprocity** | ✅ | P0 | Single Gradual mode with 24h/5 views grace period |
+| **Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan (e.g., Silver: ON, Platinum: OFF) |
 | **Premium Reciprocity Bypass** | ✅ | P0 | If a member's plan has reciprocity OFF, reciprocity rules are bypassed for that member |
 | **Contact Privacy Settings** | ✅ | P0 | All premium/Accepted/Mutual/Hidden |
 | **Photo Privacy Settings** | ✅ | P0 | Everyone/Premium/Sent/Accepted/Request |

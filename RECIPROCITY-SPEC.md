@@ -18,24 +18,24 @@
 | Contact Details | No | Managed separately via plan limits and privacy controls. |
 | Basic Info & Bio | No | Always visible. |
 
-## 3. Modes & Grace Period
-| Mode | Default Audience | Enforcement Behavior | Relaxation Trigger |
-|------|------------------|----------------------|--------------------|
-| Gradual (Default) | All | Grace period applies, then strict visibility until reciprocity is met. | Mutual interest, premium upgrade, or admin override unlocks additional fields. |
-| Lenient | Admin-configured cohorts | Maintains access during grace period with nudges instead of locks. | Automatically tightens once grace period ends. |
-| Strict | Admin-configured cohorts | Applies reciprocity immediately after grace period, no soft prompts. | Admin override only. |
+## 3. Reciprocity Mode
 
-**Grace Period:** 24 hours after first login **and** at least 5 profile views (whichever occurs later). Members get a full day to explore even if they browse quickly; enforcement begins when both thresholds are met unless a relaxation trigger fires.
+### Single Gradual Mode
+- **Enforcement Behavior**: Grace period applies, then strict visibility until reciprocity is met.
+- **Relaxation Trigger**: Mutual interest or premium upgrade unlocks additional fields.
+- **Grace Period**: 24 hours after first login **and** at least 5 profile views (whichever occurs later).
+- **Admin Override**: Available for support cases with audit logging.
 
-## 4. Plan Overrides
-| Plan | Default Reciprocity | Override Options |
-|------|---------------------|------------------|
-| Free | On | Admin can only adjust grace period length. |
-| Silver / Silver Plus / Gold | On | Admin can toggle bundle-level exemptions. |
-| Platinum | Off | Reciprocity bypassed, but user privacy settings still respected. |
-| VIP Assisted | Off | Reciprocity bypassed. Matchmakers can view full profiles regardless of member contribution. |
+## 4. Plan Structure
 
-Premium bypass grants viewing rights but does not auto-fill the member's own profile fields.
+| Plan | Photo Limit | Reciprocity | Features |
+|------|-------------|-------------|----------|
+| Free | 2 photos | Enforced | Basic search, limited daily views |
+| Paid | 5 photos | Enforced | All free features + unlimited views, advanced search |
+| VIP | 10 photos | Bypassed | All paid features + priority support, matchmaking |
+
+- **Reciprocity**: Enforced for free/paid, bypassed for VIP
+- **Admin Override**: Available for all plans in special cases
 
 ## 5. UX Flows
 ### 5.1 Locked State Indicators

@@ -112,6 +112,85 @@ interface BuntProfile {
 - **Mangalorean Matrimony**: City-specific page
 - **Local Traditions**: Information about local customs
 
+### **6.3 URL Structure & Navigation**
+
+#### **6.3.1 URL Pattern**
+```
+https://matri.naveevo.com/{religion}/{community}/{sub-community?}
+```
+
+#### **6.3.2 URL Examples**
+- `https://matri.naveevo.com/hindu/bunt`
+- `https://matri.naveevo.com/christian/mangalorean`
+- `https://matri.naveevo.com/muslim/sunni`
+- `https://matri.naveevo.com/hindu/bunt/shetty` (for sub-communities)
+
+#### **6.3.3 URL Rules**
+- All lowercase letters
+- Hyphens for word separation
+- No trailing slashes
+- Canonical URLs for all pages
+- Redirects for common misspellings
+
+#### **6.3.4 Breadcrumb Navigation**
+```
+Home > {Religion} Matrimony > {Community} > {Sub-community}
+```
+
+Example for Bunt community:
+```
+Home > Hindu Matrimony > Bunt Community > Shetty
+```
+
+### **6.4 SEO & Structured Data**
+```typescript
+// Example for Bunt community page
+export const BuntCommunitySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': 'Bunt Matrimony - CC Matrimony',
+  'description': 'Find your perfect Bunt community life partner. Connect with Shetty, Hegde, Poojary, Kotian, and Karkera sub-communities.',
+  'url': 'https://matri.naveevo.com/${community.religion.toLowerCase()}/${community.slug}',
+  'mainEntityOfPage': {
+    '@type': 'WebPage',
+    '@id': 'https://matri.naveevo.com/${community.religion.toLowerCase()}/${community.slug}'
+  },
+  'publisher': {
+    '@type': 'Organization',
+    'name': 'CC Matrimony',
+    'logo': {
+      '@type': 'ImageObject',
+      'url': 'https://matri.naveevo.com/logo.png'
+    }
+  },
+  'breadcrumb': {
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': 'https://matri.naveevo.com/'
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': '${community.religion} Matrimony',
+        'item': 'https://matri.naveevo.com/${community.religion.toLowerCase()}'
+      },
+      {
+        '@type': 'ListItem',
+        'position': 3,
+        'name': '${community.name} Matrimony'
+      }
+    ]
+  },
+  'image': 'https://matri.naveevo.com/images/communities/bunt-og.jpg',
+  'datePublished': '2025-01-01',
+  'dateModified': '2025-11-06'
+};
+```
+
 ## 7. Marketing & Outreach
 
 ### **7.1 Community Leaders**
@@ -127,6 +206,221 @@ interface BuntProfile {
 - **Social Functions**: Community weddings and celebrations
 
 ## 8. Technical Implementation
+
+### **8.0 Route Handling**
+
+#### **8.0.1 Next.js Dynamic Routing**
+```typescript
+// File structure
+/pages
+  /[religion]
+    /[community]
+      /index.tsx         // Community page
+      /[subcommunity].tsx // Sub-community page
+    /index.tsx           // Religion landing page
+```
+
+#### **8.0.2 Route Handler**
+```typescript
+// pages/[religion]/[community]/index.tsx
+import { GetStaticProps, GetStaticPaths } from 'next';
+
+type CommunityPageProps = {
+  religion: string;
+  community: Community;
+  breadcrumbs: Array<{ name: string; href: string }>;
+};
+
+export default function CommunityPage({ religion, community, breadcrumbs }: CommunityPageProps) {
+  // Page implementation
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Generate paths for all active communities
+  const { data: communities } = await supabase
+    .from('communities')
+    .select('slug, religion:religions(slug)')
+    .eq('is_active', true);
+
+  const paths = communities.map(community => ({
+    params: {
+      religion: community.religion.slug,
+      community: community.slug
+    }
+  }));
+
+  return { paths, fallback: 'blocking' };
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const { religion: religionSlug, community: communitySlug } = params as {
+    religion: string;
+    community: string;
+  };
+
+  // Fetch community data with religion and sub-communities
+  const { data: community } = await supabase
+    .from('communities')
+    .select(`
+      *,
+      religion:religions(*),
+      sub_communities(*)
+    `)
+    .eq('slug', communitySlug)
+    .eq('religion.slug', religionSlug)
+    .single();
+
+  if (!community) {
+    return { notFound: true };
+  }
+
+  const breadcrumbs = [
+    { name: 'Home', href: '/' },
+    { 
+      name: `${community.religion.name} Matrimony`, 
+      href: `/${community.religion.slug}` 
+    },
+    { 
+      name: `${community.name} Community`,
+      href: `/${community.religion.slug}/${community.slug}`,
+      current: true
+    }
+  ];
+
+  return {
+    props: {
+      religion: community.religion,
+      community,
+      breadcrumbs
+    },
+    revalidate: 3600 // Regenerate page every hour
+  };
+};
+```
+
+#### **8.0.3 Sitemap Generation**
+```typescript
+// pages/sitemap.xml.tsx
+export async function getServerSideProps({ res }) {
+  const { data: communities } = await supabase
+    .from('communities')
+    .select(`
+      slug,
+      updated_at,
+      religion:religions(slug)
+    `)
+    .eq('is_active', true);
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      ${communities.map(community => `
+        <url>
+          <loc>https://matri.naveevo.com/${community.religion.slug}/${community.slug}</loc>
+          <lastmod>${new Date(community.updated_at).toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+    </urlset>`;
+
+  res.setHeader('Content-Type', 'text/xml');
+  res.write(sitemap);
+  res.end();
+
+  return { props: {};
+}
+```
+
+#### **8.0.4 Next.js Configuration**
+```javascript
+// next.config.js
+module.exports = {
+  async redirects() {
+    return [
+      // Redirect /hindu/ to /hindu
+      {
+        source: '/:religion/',
+        destination: '/:religion',
+        permanent: true,
+      },
+      // Handle common misspellings
+      {
+        source: '/hindhu/:path*',
+        destination: '/hindu/:path*',
+        permanent: true,
+      },
+    ];
+  },
+};
+```
+
+### **8.0 Community Page SEO Implementation**
+
+#### **8.0.1 Dynamic Sitemap Generation**
+```typescript
+// pages/sitemap.xml.tsx
+export async function getServerSideProps({ res }) {
+  const { data: communities } = await supabase
+    .from('communities')
+    .select('slug, updated_at, religion')
+    .eq('is_active', true);
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      ${communities.map(community => `
+        <url>
+          <loc>https://matri.naveevo.com/${community.religion.toLowerCase()}/${community.slug}</loc>
+          <lastmod>${new Date(community.updated_at).toISOString()}</lastmod>
+          <changefreq>weekly</changefreq>
+          <priority>0.8</priority>
+        </url>
+      `).join('')}
+    </urlset>`;
+
+  res.setHeader('Content-Type', 'text/xml');
+  res.write(sitemap);
+  res.end();
+
+  return { props: {} };
+}
+```
+
+#### **8.0.2 OpenGraph Implementation**
+```tsx
+// components/community/CommunityHead.tsx
+interface CommunityHeadProps {
+  community: {
+    name: string;
+    description: string;
+    slug: string;
+    imageUrl: string;
+    religion: string;
+  };
+}
+
+export default function CommunityHead({ community }: CommunityHeadProps) {
+  return (
+    <Head>
+      <title>{community.name} Matrimony - CC Matrimony</title>
+      <meta name="description" content={community.description} />
+      
+      {/* Open Graph / Facebook */}
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={`https://matri.naveevo.com/${community.religion.toLowerCase()}/${community.slug}`} />
+      <meta property="og:title" content={`${community.name} Matrimony - Find Your Life Partner`} />
+      <meta property="og:description" content={community.description} />
+      <meta property="og:image" content={community.imageUrl || 'https://matri.naveevo.com/og-default.jpg'} />
+
+      {/* Twitter */}
+      <meta property="twitter:card" content="summary_large_image" />
+      <meta property="twitter:url" content={`https://matri.naveevo.com/${community.religion.toLowerCase()}/${community.slug}`} />
+      <meta property="twitter:title" content={`${community.name} Matrimony - CC Matrimony`} />
+      <meta property="twitter:description" content={community.description} />
+      <meta property="twitter:image" content={community.imageUrl || 'https://matri.naveevo.com/og-default.jpg'} />
+    </Head>
+  );
+}
+```
 
 ### **8.1 Community-Specific Database Schema**
 ```sql
@@ -222,7 +516,26 @@ interface CommunitySearchFilters {
 - **Success Stories**: Success stories in English with community context
 - **Platform Branding**: CC Matrimony branding throughout all content
 
-## 12. Future Expansion
+## 12. Technical SEO Considerations
+
+### **12.1 Canonical URLs**
+- Automatically add canonical tags to all pages
+- Handle URL parameters for search and filtering
+- Implement hreflang for regional variations
+
+### **12.2 Performance Optimization**
+- Implement ISR (Incremental Static Regeneration)
+- Optimize images with next/image
+- Implement proper caching headers
+- Use CDN for static assets
+
+### **12.3 Structured Data**
+- Implement JSON-LD for all pages
+- Add FAQ schema for common questions
+- Include local business schema for regional offices
+- Implement breadcrumb schema
+
+## 13. Future Expansion
 
 ### **12.1 Additional Communities**
 - **Billava Community**: Second priority after Bunt
@@ -237,6 +550,28 @@ interface CommunitySearchFilters {
 
 ---
 
-**Last Updated:** December 2024  
-**Document Version:** 1.0  
-**Next Review:** January 2025
+## 14. Monitoring & Maintenance
+
+### **14.1 SEO Audits**
+- Monthly technical SEO audits
+- Monitor crawl errors in Google Search Console
+- Track keyword rankings and impressions
+- Monitor Core Web Vitals
+
+### **14.2 URL Management**
+- 301 redirects for all URL changes
+- Monitor 404 errors
+- Regular sitemap submission to search engines
+- Canonical URL validation
+
+### **14.3 Performance Monitoring**
+- Page load speed tracking
+- Mobile usability testing
+- Server response times
+- API response times
+
+---
+
+**Last Updated:** November 2025  
+**Document Version:** 2.0  
+**Next Review:** December 2025
