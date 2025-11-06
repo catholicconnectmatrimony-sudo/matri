@@ -43,20 +43,39 @@
 - Audit tables kept lightweight (essential fields only)
 - Full PostgreSQL control for complex queries
 
-## 5. Search Strategy
-- **Primary**: PostgreSQL indexed filters and full-text search
-- **Indexes**: B-Tree + GIN indexes for name/bio search
-- **Performance**: Optimized queries with proper indexing
-- **Future**: Elasticsearch when search volume grows
+## 5. Search Strategy (PHASED APPROACH)
+- **Week 1-2 (MVP)**: Simple WHERE clauses only
+  ```sql
+  WHERE religion = 'hindu' 
+    AND community = 'bunt'
+    AND age BETWEEN 25 AND 35
+    AND gender = 'female'
+  ```
+- **Week 3-4**: Add basic indexes for performance
+  ```sql
+  CREATE INDEX idx_profiles_search 
+  ON profiles(religion, community, age, gender);
+  ```
+- **Week 5+**: Add PostgreSQL full-text search for name/bio
+  ```sql
+  CREATE INDEX idx_profiles_fulltext 
+  ON profiles USING GIN(to_tsvector('english', name || ' ' || about_me));
+  ```
+- **Post-Launch**: Consider Elasticsearch only if search becomes slow (>1000 users)
+- **AI Development Note**: Start with simple filters, add complexity incrementally
 
 ## 6. Media Handling
 - **Upload**: Supabase Storage with signed URLs; PNG/GIF/JPG/JPEG/WebP up to 10 MB
 - **Plan Quotas**: Free (1 profile + 1 album slot); Paid (1 profile + 9 album + 3 family/group slots)
-- **Processing**: Server-side Sharp pipeline produces two derivatives per upload (card 400×500, detail 800×1000) to match portrait-first layouts; originals discarded after processing, converted to WebP (JPEG 85 fallback), EXIF stripped, watermark applied
-- **Storage Savings**: 2 derivatives vs 3 = 33% storage reduction, ~660KB per user (down from 900KB)
-- **Display Fit**: Responsive components pick the derivative closest to viewport; square crops for cards, 4:5 portrait for detail pages to mirror leading portals
+- **Processing (SIMPLIFIED for MVP)**: 
+  - **Phase 1 (Week 3)**: Client-side compression only using `browser-image-compression` (max 1200×1500, <500KB)
+  - **Phase 2 (Post-launch)**: Add server-side Sharp pipeline for watermarking if needed
+  - Convert to WebP (JPEG 85 fallback), EXIF stripped
+  - **Single derivative approach**: Store ONE optimized version, use CSS `object-fit` for responsive display
+- **Storage Savings**: Single derivative vs 2 = 50% storage reduction, ~330KB per user (down from 660KB)
+- **Display Fit**: CSS handles responsive sizing with `object-fit: cover` for cards, `object-fit: contain` for detail pages
 - **Moderation**: Manual admin approval (auto-approve by default)
-- **Watermarking**: Client-side watermarking for security
+- **Watermarking**: Deferred to post-launch (client-side watermarking if needed)
 
 ## 7. Payments & Monetization
 | Capability | Service | Notes |
@@ -359,9 +378,13 @@ class SupabaseRealtimeManager {
 
 - **Message retention**: Keep 6–12 months of chat history in the primary `messages` table. Run the weekly cleanup job below once growth accelerates; export to Supabase Storage only if long-term archives are required.
 - **Media handling**: Store photos and attachments in Supabase Storage; persist only metadata and `storage_path` keys in Postgres. Use signed URLs for access.
-- **Scheduled work**: Use the consolidated Vercel Cron schedule (≤8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin “Operations” widget can show last run, duration, and status.
-- **Bandwidth planning**: Track Vercel bandwidth weekly; Hobby tier caps at 100 GB/month. Trigger upgrade to Vercel Pro once sustained usage exceeds ~80 GB/month (≈300–500 light MAU or 200–300 average MAU).
-- **Storage planning**: Supabase 1 GB free tier supports ~1,000 users with ≤2 compressed photos each (<500 KB). Set alert at 900 MB; plan upgrade to Supabase Pro or external storage when thresholds are hit.
+- **Scheduled work**: Use the **simplified 4-job Vercel Cron schedule** (down from 8 jobs). Group adjacent tasks inside each invocation to stay within Hobby limits and log every run to a `cron_runs` table so the admin "Operations" widget can show last run, duration, and status.
+  - **Daily Morning (09:00)**: Match recommendations, birthday nudges, premium expiry alerts, profile verification reminders, "Who viewed me" digest
+  - **Daily Evening (18:00)**: Re-engagement emails, inactive user nudges, profile completion reminders
+  - **Daily Midnight (00:00)**: Analytics snapshot, sitemap regeneration, database cleanup, backup verification, photo moderation queue
+  - **Weekly (Sun 10:00)**: Success story reminders, partner follow-ups, weekly reports
+- **Bandwidth planning**: Track Vercel bandwidth weekly; Hobby tier caps at 100 GB/month. Trigger upgrade to Vercel Pro once sustained usage exceeds ~80 GB/month (≈300–500 light MAU or 200–300 average MAU).
+- **Storage planning**: Supabase 1 GB free tier supports ~1,000 users with ≤2 compressed photos each (<500 KB). Set alert at 900 MB; plan upgrade to Supabase Pro or external storage when thresholds are hit.
 - **Security**: Enforce Row Level Security on all tables. Supabase policies govern reciprocity visibility and admin overrides. Manage secrets via Vercel/Supabase dashboards.
 
 ## 16. System Health Monitoring
@@ -601,28 +624,6 @@ const checkConversionOpportunity = async (userId: string) => {
 | Database size | Supabase usage | ≥400 MB | Start archiving or upgrade to Supabase Pro |
 | Realtime connections | Supabase usage | ≥400 concurrent | Refine connection lifecycle or upgrade |
 | Storage usage | Supabase usage | ≥900 MB | Clear stale assets or purchase add-on |
-| Bandwidth/runtime | Vercel analytics | ≥80 GB/mo or sustained >1 req/s | Upgrade to Vercel Pro |
-| Error rate | Sentry alerts | Above baseline | Triage and fix |
-
-Automate weekly metric snapshots (Supabase Edge Function or GitHub Action) so trends are visible before thresholds are hit.
-
-### 16.1 Consolidated Vercel Cron schedule
-
-| Window | Cron Expression | Tasks batched inside handler |
-|--------|-----------------|-------------------------------|
-| Morning (09:00) | `0 9 * * *` | Match recommendations, birthday nudges, premium expiry alerts |
-| Midday (10:00) | `0 10 * * *` | Profile verification reminders |
-| Digest (12:00) | `0 12 * * *` | Daily “Who viewed me” digest email |
-| Afternoon (18:00) | `0 18 * * *` | Re-engagement emails, inactive user nudges |
-| Midnight (00:00) | `0 0 * * *` | Analytics snapshot, sitemap regeneration |
-| Early Morning (02:00) | `0 2 * * *` | Database cleanup, backup verification checks |
-| Photo moderation (every 6h) | `0 */6 * * *` | Queue flagged-photo review summary (no per-upload polling) |
-| Weekly (Sun 10:00) | `0 10 * * SUN` | Success story reminders, partner follow-ups |
-
-Each job writes to `cron_runs(job_name, started_at, finished_at, status, notes)` so admins can audit failures or rerun tasks manually.
-
-#### Cron task resilience example
-
 ```typescript
 const morningTasks = async () => {
   const tasks = [
