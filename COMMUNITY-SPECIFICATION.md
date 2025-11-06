@@ -2,10 +2,32 @@
 
 ## 1. Purpose & Scope
 - Focus on Coastal Karnataka/Tulunadu region communities
-- Primary focus on Bunt community for initial launch
-- Support for local languages and cultural elements
+- **MVP Launch (Week 8)**: Bunt community ONLY for focused product-market fit validation
+- **Week 4 Expansion**: Add Billava community
+- **Month 2 Expansion**: All Hindu, Christian, and Muslim communities
+- Support for local languages and cultural elements (matching preferences only, English UI)
 - Community-specific features and traditions
 - Platform: CC Matrimony (matri.naveevo.com)
+
+## 1.1. Launch Phase Strategy
+
+### **Phase 1: Bunt-Only Launch (Weeks 1-4)**
+- Single community focus: Hindu/Bunt
+- URL: `/hindu/bunt` (other community URLs return 404 or "Coming Soon")
+- Database supports all communities (ready for expansion)
+- Faster launch, clearer marketing message
+- Easier to validate product-market fit
+- 200+ profile target
+
+### **Phase 2: Expansion (Week 4+)**
+- Add Hindu/Billava community
+- URL: `/hindu/billava` goes live
+- Parallel community operations
+
+### **Phase 3: Full Launch (Month 2+)**
+- All religions: Hindu, Christian, Muslim
+- All planned communities active
+- Multi-community marketing
 
 ## 2. Primary Communities (Launch Priority)
 
@@ -33,7 +55,290 @@
 | **Konkani Christian** | Medium | Medium | P2 |
 | **Syro-Malabar** | Small | High | P2 |
 
-## 3. Community-Specific Features
+## 3. URL Structure & Routing
+
+### 3.1 URL Patterns
+```
+/ - Home
+/[religion] - Religion page (e.g., /hindu, /christian)
+/[religion]/[community] - Community page (e.g., /hindu/bunt, /christian/mangalorean)
+```
+
+### 3.2 404 Tracking & Redirects
+
+#### Database Schema
+```sql
+-- Add to existing database schema
+CREATE TABLE url_redirects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_path VARCHAR(255) NOT NULL,
+  to_path VARCHAR(255) NOT NULL,
+  status_code INTEGER DEFAULT 301,
+  is_active BOOLEAN DEFAULT TRUE,
+  hit_count INTEGER DEFAULT 0,
+  last_hit_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  created_by UUID REFERENCES users(id),
+  UNIQUE(from_path)
+);
+
+-- Index for performance
+CREATE INDEX idx_redirects_from_path ON url_redirects(from_path) WHERE is_active = TRUE;
+
+-- 404 Logs
+CREATE TABLE not_found_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  path VARCHAR(500) NOT NULL,
+  referrer VARCHAR(500),
+  user_agent TEXT,
+  ip_address INET,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for analysis
+CREATE INDEX idx_not_found_path ON not_found_logs(path);
+CREATE INDEX idx_not_found_created ON not_found_logs(created_at);
+```
+
+#### Middleware Implementation
+```typescript
+// middleware.ts
+export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname.toLowerCase();
+  
+  // Skip API routes and static files
+  if (path.startsWith('/api') || path.match(/\.[a-z0-9]+$/i)) {
+    return NextResponse.next();
+  }
+
+  // Check for redirects
+  const { data: redirect } = await supabase
+    .from('url_redirects')
+    .select('to_path, status_code')
+    .eq('from_path', path)
+    .eq('is_active', true)
+    .single();
+
+  if (redirect) {
+    // Update hit counter (async)
+    supabase.rpc('increment_redirect_hits', { redirect_id: redirect.id });
+    
+    return NextResponse.redirect(
+      new URL(redirect.to_path, req.url),
+      { status: redirect.status_code || 301 }
+    );
+  }
+
+  // Check if this is a valid community URL
+  const pathParts = path.split('/').filter(Boolean);
+  if (pathParts.length === 2) {
+    const [religion, community] = pathParts;
+    const { data: communityExists } = await supabase
+      .from('communities')
+      .select('id')
+      .eq('slug', community)
+      .eq('religion.slug', religion)
+      .single();
+
+    if (!communityExists) {
+      // Log 404
+      await supabase.from('not_found_logs').insert({
+        path,
+        referrer: req.referrer,
+        user_agent: req.headers.get('user-agent'),
+        ip_address: req.ip
+      });
+
+      // Check for similar communities
+      const { data: similar } = await supabase
+        .from('communities')
+        .select('slug, religion:religions(slug)')
+        .ilike('slug', `%${community}%`)
+        .limit(3);
+
+      if (similar?.length) {
+        // Redirect to search results for similar communities
+        const searchParams = new URLSearchParams({
+          q: community,
+          type: 'community',
+          did_you_mean: 'true'
+        });
+        return NextResponse.redirect(
+          new URL(`/search?${searchParams}`, req.url)
+        );
+      }
+    }
+  }
+
+  return NextResponse.next();
+}
+```
+
+#### Database Function for Hit Counting
+```sql
+-- Add this to your database functions
+CREATE OR REPLACE FUNCTION increment_redirect_hits(redirect_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE url_redirects 
+  SET 
+    hit_count = hit_count + 1,
+    last_hit_at = NOW(),
+    updated_at = NOW()
+  WHERE id = redirect_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Admin Interface for Managing Redirects
+```typescript
+// Example component for the admin dashboard
+function RedirectManager() {
+  const [redirects, setRedirects] = useState([]);
+  const [newRedirect, setNewRedirect] = useState({ from: '', to: '', statusCode: 301 });
+  
+  // Fetch existing redirects
+  useEffect(() => {
+    const loadRedirects = async () => {
+      const { data } = await supabase
+        .from('url_redirects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      setRedirects(data || []);
+    };
+    loadRedirects();
+  }, []);
+
+  // Add new redirect
+  const addRedirect = async (e) => {
+    e.preventDefault();
+    const { data, error } = await supabase
+      .from('url_redirects')
+      .insert([{
+        from_path: newRedirect.from,
+        to_path: newRedirect.to,
+        status_code: newRedirect.statusCode,
+        created_by: user.id
+      }])
+      .select();
+    
+    if (!error && data?.[0]) {
+      setRedirects([data[0], ...redirects]);
+      setNewRedirect({ from: '', to: '', statusCode: 301 });
+    }
+  };
+
+  // Toggle redirect status
+  const toggleRedirect = async (id, isActive) => {
+    const { error } = await supabase
+      .from('url_redirects')
+      .update({ is_active: !isActive, updated_at: new Date() })
+      .eq('id', id);
+    
+    if (!error) {
+      setRedirects(redirects.map(r => 
+        r.id === id ? { ...r, is_active: !isActive } : r
+      ));
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={addRedirect} className="space-y-4 p-4 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium">Add New Redirect</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">From Path</label>
+            <input
+              type="text"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={newRedirect.from}
+              onChange={(e) => setNewRedirect({...newRedirect, from: e.target.value})}
+              placeholder="/old-path"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">To Path</label>
+            <input
+              type="text"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={newRedirect.to}
+              onChange={(e) => setNewRedirect({...newRedirect, to: e.target.value})}
+              placeholder="/new-path"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Status Code</label>
+            <select
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={newRedirect.statusCode}
+              onChange={(e) => setNewRedirect({...newRedirect, statusCode: parseInt(e.target.value)})}
+            >
+              <option value={301}>301 (Permanent)</option>
+              <option value={302}>302 (Temporary)</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Add Redirect
+          </button>
+        </div>
+      </form>
+
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {redirects.map((redirect) => (
+            <li key={redirect.id}>
+              <div className="px-4 py-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center">
+                      <p className="text-sm font-medium text-blue-600 truncate">
+                        {redirect.from_path}
+                      </p>
+                      <p className="ml-2 flex-shrink-0 text-sm text-gray-500">
+                        → {redirect.to_path} ({redirect.status_code})
+                      </p>
+                    </div>
+                    <div className="mt-2 flex">
+                      <p className="flex items-center text-sm text-gray-500">
+                        <span>Hits: {redirect.hit_count}</span>
+                        <span className="mx-1">•</span>
+                        <span>Last hit: {redirect.last_hit_at ? new Date(redirect.last_hit_at).toLocaleDateString() : 'Never'}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ml-4 flex-shrink-0">
+                    <button
+                      onClick={() => toggleRedirect(redirect.id, redirect.is_active)}
+                      className={`inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md ${
+                        redirect.is_active 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      {redirect.is_active ? 'Active' : 'Inactive'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+```
+
+## 4. Community-Specific Features
 
 ### **3.1 Bunt Community Features**
 ```typescript
@@ -572,6 +877,8 @@ interface CommunitySearchFilters {
 
 ---
 
-**Last Updated:** November 2025  
-**Document Version:** 2.0  
-**Next Review:** December 2025
+**Last Updated:** November 6, 2025  
+**Document Version:** 3.0 (Finalized - Bunt-Only Launch Strategy)  
+**MVP Launch:** Bunt community only (January 5, 2026)  
+**Expansion:** Billava (Month 4), All communities (Month 6)  
+**Next Review:** Post-launch (January 2026)

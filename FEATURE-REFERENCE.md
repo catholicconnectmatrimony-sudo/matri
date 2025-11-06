@@ -40,6 +40,44 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 - **P1** - Important for user adoption (should-have)
 - **P2** - Nice-to-have for competitive advantage (could-have)
 
+### **AI Development Implementation Order:**
+For AI-driven development (Cursor/Windsurf), implement features in this order:
+
+**Week 1-2 (Foundation):**
+- Authentication (Email/Password, Google OAuth)
+- Basic Profile Creation (name, age, gender, community only)
+- Profile View (read-only, no photos yet)
+
+**Week 3 (Photos + Search):**
+- Photo Upload (client-side compression)
+- Basic Search (age, gender, community filters)
+- Profile Detail Page with Gallery
+
+**Week 4 (Interests + Payments):**
+- Interest System (send/receive/accept/decline)
+- Subscription Plans Display
+- Razorpay Integration
+
+**Week 5 (Reciprocity):**
+- Reciprocity State Calculation
+- Field Locking UI (education, occupation, income)
+- Grace Period Logic
+
+**Week 6 (Chat + Notifications):**
+- Supabase Realtime Chat
+- Email Notifications (Resend)
+- Basic notification preferences
+
+**Week 7 (Admin):**
+- Admin Authentication
+- User Management (list, search, suspend)
+- Profile Approval Queue
+
+**Week 8 (Polish):**
+- RLS Policies
+- Mobile Responsive Fixes
+- SEO + PWA Setup
+
 ### 🚀 MVP Snapshot
 - **Planned Categories:** 18 across auth, profiles, search, matching, privacy, payments, and admin.
 - **Core References:** See [Reciprocity Engine](#-privacy--safety) details and [Reciprocity Spec](./RECIPROCITY-SPEC.md) for enforcement rules.
@@ -83,15 +121,16 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Basic Profile Fields** | ✅ | P0 | Name, age, gender, location, education, occupation |
-| **Photo Upload** | ✅ | P0 | 1-10 photos (plan-based limits) |
+| **Photo Upload** | ✅ | P0 | Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group (Max 10MB per photo) |
+| **Photo Formats & Size** | ✅ | P0 | PNG/GIF/JPG/JPEG/WebP up to 10 MB per photo (reduced from 30MB for storage optimization) |
 | **Photo Watermarking** | ✅ | P1 | Small watermark on all photos (visible in-app and downloads) for branding/security |
 | **Profile Completeness** | ✅ | P1 | Real-time score (0-100%) with progress bar; excludes intentionally skipped fields |
 | **Profile ID Generation** | ✅ | P0 | Auto-generated CCM001234 format |
 | **Profile Approval Workflow** | ✅ | P0 | Admin approval queue for all new profiles |
 | **Profile Preview Mode** | ✅ | P1 | View as other users see it |
 | **Profile Deactivation** | ✅ | P1 | Temporarily hide (data retained) |
-| **Profile Export PDF** | ✅ | P2 | 3-page biodata with QR code |
-| **Profile Export JPG** | ✅ | P2 | WhatsApp-shareable card |
+| **Profile Export PDF** | ❌ | P2 | Removed from MVP - complex implementation, users can screenshot |
+| **Profile Export JPG** | ❌ | P2 | Removed from MVP - complex implementation, users can screenshot |
 | **Profile Strength Analyzer** | ✅ | P1 | Advanced scoring with improvement tips |
 | **Profile Last Updated** | ✅ | P0 | Timestamp of last edit |
 | **Multi-step Onboarding** | ✅ | P0 | Flexible: Quick setup (2-min minimal) + Gradual completion prompts |
@@ -188,10 +227,10 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Keyword Search** | ✅ | P0 | Search by name, city, occupation, bio |
 | **Search Suggestions** | ✅ | P1 | Auto-suggest locations, occupations |
 | **Search by Profile ID** | ✅ | P0 | Direct lookup (CCM001234) |
-| **Search History** | ❌ | P2 | Planned post-MVP |
+| **Search History** | ❌ | P2 | Removed from MVP - not essential, adds complexity |
 | **Shareable Search URLs** | 🔄 | P1 | Expose query params for bookmarking/sharing search results |
 | **Search Alerts** | ❌ | P2 | Planned post-MVP |
-| **Saved Searches** | 🔄 | P1 | Save search templates for quick reuse |
+| **Saved Searches** | ❌ | P2 | Removed from MVP - defer to Phase 2 |
 | **Quick Match Preview** | ❌ | P1 | Planned post-MVP |
 | **Search Result Sorting** | ✅ | P1 | Sort by: Recently Active, Profile Completeness, Mutual Interests, Distance |
 | **Search Result Pagination** | ✅ | P0 | 20 results per page with infinite scroll option |
@@ -225,7 +264,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Smart Suggestions** | ✅ | P1 | "You may also like" section |
 | **Auto-Match Notifications** | ✅ | P1 | Daily email: 5 new matches |
 | **Interest Limit Reset** | ✅ | P1 | Daily reset at midnight local time with countdown indicator |
-| **Interest Analytics** | ❌ | P2 | Deferred: Complex analytics not needed for MVP |
+| **Interest Analytics** | ❌ | P2 | Removed from MVP - defer to Phase 2 |
 | **Interest Reminder System** | ❌ | P2 | Deferred: Email notifications sufficient |
 | **Interest Bulk Actions** | ❌ | P2 | Deferred: Not essential for core functionality |
 | **Interest Priority System** | ❌ | P2 | Deferred: Adds complexity without clear value |
@@ -247,7 +286,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Typing Indicators** | ✅ | P2 | "User is typing..." |
 | **Read Receipts** | ✅ | P1 | Sent/delivered/read checkmarks |
 | **Photo Sharing in Chat** | ✅ | P1 | Send images (max 5MB, watermarked) |
-| **File Attachments** | ✅ | P1 | Share PDFs (horoscope, biodata, max 10MB) |
+| **File Attachments** | ❌ | P2 | Removed from MVP - text + photo sharing only (PDF sharing deferred to Phase 2) |
 | **Report Abuse in Chat** | ✅ | P0 | Report with categories |
 | **Block User from Chat** | ✅ | P0 | Block user, no further messages |
 | **Chat Backup/Export** | ❌ | P2 | Deferred: Complex implementation for MVP |
@@ -262,8 +301,9 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **Photo Upload** | ✅ | P0 | 1-10 photos (plan-based limits) |
-| **Photo Plan Limits** | ✅ | P1 | Free: 2, Paid: 5, VIP: 10 |
+| **Photo Upload** | ✅ | P0 | Drag/drop uploader with crop preview and reorder |
+| **Photo Slots by Plan** | ✅ | P0 | Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group |
+| **Family / Group Album** | ✅ | P0 | Dedicated slot bucket (3 photos) for group shots |
 | **Photo Upload Requirement** | ✅ | P0 | Cannot browse without ≥1 photo |
 | **Photo Auto-Approval** | ✅ | P0 | Photos publish instantly; admins post-moderate flagged items |
 | **Flag Review Queue** | ✅ | P1 | Queue of flagged/reported photos for manual review |
@@ -286,8 +326,8 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 |---------|--------|----------|-------------|
 | **Reciprocity Engine** | ✅ | P1 | Field-level reciprocal visibility: see only what you share (photos, education, occupation, income, family, horoscope - all independent) |
 | **Reciprocity** | ✅ | P0 | Single Gradual mode with 24h/5 views grace period |
-| **Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan (e.g., Silver: ON, Platinum: OFF) |
-| **Premium Reciprocity Bypass** | ✅ | P0 | If a member's plan has reciprocity OFF, reciprocity rules are bypassed for that member |
+| **Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan from dashboard |
+| **Premium Reciprocity Bypass** | ✅ | P0 | Default: all paid plans start with reciprocity OFF; admins can toggle ON per plan or per member |
 | **Contact Privacy Settings** | ✅ | P0 | All premium/Accepted/Mutual/Hidden |
 | **Photo Privacy Settings** | ✅ | P0 | Everyone/Premium/Sent/Accepted/Request |
 | **Privacy Settings Dashboard** | ✅ | P1 | Central hub to manage all privacy preferences |
@@ -319,7 +359,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 | Field | Your Contribution | What You Can See |
 |-------|-------------------|------------------|
-| **Photos** | Upload N photos | View up to N photos on other profiles (subject to their photo privacy) |
+| **Photos** | Upload per-slot quota (Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group) | View matching photo slots on other profiles (subject to their photo privacy) |
 | **Education** | Provide your Education | View Education on other profiles |
 | **Occupation** | Provide your Occupation | View Occupation on other profiles |
 | **Income** | Provide your Income | View Income on other profiles |
@@ -351,11 +391,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | Plan | Default Reciprocity | Notes |
 |------|---------------------|-------|
 | Free | ON | Full reciprocity rules apply |
-| Silver | ON | Reciprocity required for bundles |
-| Silver Plus | ON | Reciprocity required for bundles |
-| Gold | ON | Reciprocity required for bundles |
-| Platinum | OFF | Bypasses reciprocity rules |
-| VIP Assisted | OFF | Bypasses reciprocity rules |
+| Paid (all tiers) | OFF | Bypasses reciprocity until admin enables for a tier |
 
 ### **Payment Gateways**
 | Feature | Status | Priority | Description |
@@ -371,7 +407,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Payment Webhooks** | ✅ | P0 | Handle success/failure/refund callbacks |
 | **Manual Refund Button** | ✅ | P1 | Process refunds with reason dropdown |
 | **Payment History View** | ✅ | P1 | Table with filters (user, date, status) |
-| **Payment Analytics Dashboard** | ❌ | P2 | Deferred: Manual tracking sufficient for MVP |
+| **Payment Analytics Dashboard** | ❌ | P2 | Removed from MVP - basic payment table sufficient |
 | **Payment Failure Recovery** | ❌ | P2 | Deferred: Manual handling sufficient for MVP |
 | **Payment Refund Automation** | ❌ | P2 | Deferred: Manual refund processing for MVP |
 
@@ -435,10 +471,13 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **React Native App (Android)** | ✅ | P0 | Native Android app with core web feature parity |
+| **Progressive Web App (PWA)** | ✅ | P0 | Home screen installation, push notifications, offline caching, app-like experience |
 | **Mobile-First Responsive UI** | ✅ | P0 | Touch-friendly, mobile-optimized design |
+| **Profile QR Code Sharing** | ✅ | P1 | Generate QR code for easy profile sharing |
 | **Image Lazy Loading** | ✅ | P1 | Load on scroll for faster mobile |
 | **Responsive Tables** | ✅ | P1 | Mobile-friendly profile details |
+| **React Native App (Android)** | ❌ | P2 | Deferred to Phase 3 - PWA provides app-like experience for MVP |
+| **React Native App (iOS)** | ❌ | P2 | Deferred to Phase 3 - focus on Android after PWA validation |
 
 ---
 
@@ -492,7 +531,6 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 ---
 
-
 ## 📋 LEGAL & COMPLIANCE
 
 | Feature | Status | Priority | Description |
@@ -521,7 +559,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Reciprocity Tips Card** | ✅ | P1 | Dashboard panel with contextual prompts (e.g., "Upload 2 more photos to unlock 2 more") |
 | **User Onboarding Flow** | ✅ | P0 | Guided tour for new users with feature highlights |
 | **Help & Support Center** | ✅ | P1 | FAQ, video tutorials, and contact support |
-| **WhatsApp Support Chat** | ✅ | P2 | Route support queries through WhatsApp Business API with admin inbox sync |
+| **WhatsApp Support Chat** | ❌ | P2 | Removed from MVP - email + phone support sufficient |
 | **User Feedback System** | ❌ | P2 | Deferred: Contact form sufficient for MVP |
 | **Accessibility Compliance** | ✅ | P0 | WCAG 2.1 AA compliance for screen readers and keyboard navigation |
 
@@ -605,6 +643,17 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 | **Gulf Experience** | ❌ | Not relevant for general matrimony, specific to certain communities only |
 | **Search Result Export** | ❌ | Not essential for core functionality |
 
+### UX & Profile Features (Removed from MVP)
+| Feature | Status | Our Reason |
+|---------|--------|-----------|
+| **Profile Export PDF** | ❌ | Complex implementation for MVP, users can screenshot profiles |
+| **Profile Export JPG** | ❌ | Complex implementation for MVP, users can screenshot profiles |
+| **Profile Backup/Restore** | ❌ | Database backups handle this, unnecessary complexity |
+| **Search History** | ❌ | Not essential for core experience, adds complexity |
+| **Saved Searches** | ❌ | Advanced feature deferred to Phase 2 |
+| **Chat File Attachments (PDFs)** | ❌ | Text + photo sharing sufficient for MVP, defer document sharing |
+| **Match Closure Testimonial Wizard** | ❌ | Simplified to status update only, manual testimonial collection via email |
+
 ### Media & Verification
 | Feature | Status | Our Reason |
 |---------|--------|-----------|
@@ -658,10 +707,8 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 ### Mobile & Platform Extensions
 | Feature | Status | Our Reason |
 |---------|--------|-----------|
-| **Push Notifications** | ❌ | Mobile-specific channel deferred |
-| **React Native App (iOS)** | ❌ | Prioritizing Android for launch |
-| **PWA Support** | ❌ | Offline install deferred |
-| **Offline Mode** | ❌ | Offline caching deferred |
+| **React Native App (Android)** | ❌ | PWA provides sufficient app-like experience for MVP, deferred to Phase 3 |
+| **React Native App (iOS)** | ❌ | Deferred to Phase 3, focus on web + PWA first |
 | **Home Screen Widget** | ❌ | Requires deeper mobile platform integration |
 | **Simultaneous Mobile Launch** | ❌ | iOS launch deferred |
 
@@ -786,6 +833,49 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 
 ---
 
-**Last Updated:** December 2024  
-**Document Version:** 2.0  
-**Next Review:** January 2025
+## 🤖 AI DEVELOPMENT GUIDELINES
+
+### **Critical Success Factors for AI-Driven Development:**
+
+1. **Build Incrementally**
+   - Complete one feature fully before moving to next
+   - Test after each checkpoint (see week-by-week plan above)
+   - Commit working code frequently with descriptive messages
+
+2. **Follow the Schema Phases**
+   - Week 1-2: Core tables only (users, profiles, photos)
+   - Week 3-5: Feature tables (interests, subscriptions, reciprocity)
+   - Week 6-7: Communication tables (messages)
+   - Week 8: Add RLS policies after features work
+
+3. **Use Type-First Development**
+   - Generate database types before building components
+   - Use Zod for form validation
+   - Leverage TypeScript strict mode
+
+4. **Avoid Common AI Pitfalls**
+   - ❌ Don't generate entire pages in one prompt
+   - ❌ Don't implement all API routes at once
+   - ❌ Don't add reciprocity on Day 1
+   - ❌ Don't build complex admin panel early
+   - ✅ Build layout → components → logic separately
+   - ✅ Create one CRUD endpoint, test, then replicate
+   - ✅ Make it work first, optimize later
+
+5. **Testing Strategy**
+   - Focus on integration tests over unit tests
+   - Test critical user flows: register → login → create profile → search → send interest
+   - Use Supabase service role for testing before adding RLS
+
+6. **Reference Documents**
+   - See [TECH-STACK.md](./TECH-STACK.md) for detailed day-by-day implementation plan
+   - See [RECIPROCITY-SPEC.md](./RECIPROCITY-SPEC.md) for reciprocity implementation details
+   - See [COMMUNITY-SPECIFICATION.md](./COMMUNITY-SPECIFICATION.md) for Bunt community features
+
+---
+
+**Last Updated:** November 6, 2025  
+**Document Version:** 4.0 (AI-Optimized for Implementation)  
+**Implementation Start:** November 7, 2025  
+**Features Removed from MVP:** 11  
+**Next Review:** Post-launch (January 2026)

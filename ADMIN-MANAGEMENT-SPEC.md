@@ -10,7 +10,9 @@
 
 ## 2. Admin Roles & Permissions
 
-### **2.1 Super Admin (Platform Owner)**
+> **MVP Implementation**: Single Super Admin role only. Admin and Telecaller roles deferred to Week 6+ when hiring additional staff.
+
+### **2.1 Super Admin (Platform Owner)** - IMPLEMENTED FOR MVP
 | Permission | Access Level | Description |
 |------------|--------------|-------------|
 | **User Management** | Full | Create, edit, delete, suspend users |
@@ -24,7 +26,7 @@
 | **Red Flag Dashboard**: View and manage red-flagged users, profiles, and content |
 | **Churn Signals**: View and manage churn signals for users and profiles |
 
-### **2.2 Admin (Community Manager)**
+### **2.2 Admin (Community Manager)** - DEFERRED (Post-MVP when hiring community managers)
 | Permission | Access Level | Description |
 |------------|--------------|-------------|
 | **User Management** | Limited | View users, basic user operations |
@@ -35,7 +37,7 @@
 | **System Settings** | None | Cannot modify system settings |
 | **Community Management** | Full | Manage assigned community features |
 
-### **2.3 Telecaller (Support Staff)**
+### **2.3 Telecaller (Support Staff)** - DEFERRED (Post-MVP when hiring support staff)
 | Permission | Access Level | Description |
 |------------|--------------|-------------|
 | **User Management** | View Only | View user profiles and basic info |
@@ -588,6 +590,8 @@ const ALERTS = {
 
 ---
 
-**Last Updated:** November 2025  
-**Document Version:** 2.2  
-**Next Review:** December 2025
+**Last Updated:** November 6, 2025  
+**Document Version:** 3.0 (Finalized - Simplified Roles)  
+**MVP Roles:** Super Admin only  
+**Future Roles:** Admin, Telecaller (Week 6+ when hiring)  
+**Next Review:** Post-launch (January 2026)

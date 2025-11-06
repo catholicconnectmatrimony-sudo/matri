@@ -22,9 +22,10 @@
 | Notifications | **Supabase Realtime + Email** | Real-time notifications via Supabase Realtime, email fallback |
 
 ## 3. Mobile Apps
-- **Primary**: Responsive web design (mobile-first)
-- **Future**: React Native app when user base grows
-- **PWA**: Progressive Web App features for mobile experience
+- **Primary**: Progressive Web App (PWA) with mobile-first responsive design
+- **Features**: Home screen installation, push notifications, offline caching, app-like experience
+- **Future**: React Native app when user base exceeds 5,000+ MAU (deferred to Phase 3)
+- **Implementation**: Next.js built-in PWA support with service workers
 
 ## 4. Backend & Data
 | Area | Service | Responsibilities |
@@ -49,24 +50,29 @@
 - **Future**: Elasticsearch when search volume grows
 
 ## 6. Media Handling
-- **Upload**: Supabase Storage with signed URLs
-- **Processing**: Server-side pipeline (Sharp) resizes to max 1920×1920, converts to WebP (fallback JPEG 85 quality), strips EXIF, and applies CCM watermark before upload
-- **CDN**: Supabase built-in CDN
+- **Upload**: Supabase Storage with signed URLs; PNG/GIF/JPG/JPEG/WebP up to 10 MB
+- **Plan Quotas**: Free (1 profile + 1 album slot); Paid (1 profile + 9 album + 3 family/group slots)
+- **Processing**: Server-side Sharp pipeline produces two derivatives per upload (card 400×500, detail 800×1000) to match portrait-first layouts; originals discarded after processing, converted to WebP (JPEG 85 fallback), EXIF stripped, watermark applied
+- **Storage Savings**: 2 derivatives vs 3 = 33% storage reduction, ~660KB per user (down from 900KB)
+- **Display Fit**: Responsive components pick the derivative closest to viewport; square crops for cards, 4:5 portrait for detail pages to mirror leading portals
 - **Moderation**: Manual admin approval (auto-approve by default)
 - **Watermarking**: Client-side watermarking for security
 
 ## 7. Payments & Monetization
 | Capability | Service | Notes |
 |------------|---------|-------|
-| Online Payments | **Razorpay** | Primary payment gateway, subscription management |
-| UPI Backup | **PhonePe** | Secondary UPI payment option |
+| Online Payments | **Razorpay** | Primary (and only) payment gateway - handles UPI, cards, netbanking, wallets |
 | Offline Payments | **Manual Processing** | Bank transfer, cash payments with admin approval |
+| Future Gateways | **PhonePe/Paytm** | Add only if Razorpay has issues (deferred to Phase 2) |
 | Webhooks | **Vercel API Routes** | Payment verification and subscription management |
 | Invoicing | **PostgreSQL + PDF Generation** | Automated invoice generation |
 
 ## 8. Communications
 - **Email**: Resend (transactional templates, interest alerts)
-- **SMS/OTP**: Fast2SMS (primary OTP and critical alerts)
+  - Sender: noreply@matri.naveevo.com (subdomain for $0 extra cost)
+  - Reply-to: support@matri.naveevo.com
+  - DNS: SPF, DKIM, DMARC configured
+- **SMS/OTP**: Fast2SMS (confirmed - OTP and critical alerts only)
 - **Push Notifications**: Supabase Realtime notifications
 - **Chat**: Supabase Realtime-based messaging with file sharing
 
@@ -105,15 +111,40 @@
 | Item | Est. Cost |
 |------|-----------|
 | Vercel Hobby | $0 |
-| Supabase Free | $0 |
-| Resend (Starter tier) | $20 |
-| Fast2SMS | $10 |
-| Monitoring (BetterUptime + alerts) | $5 |
-| Razorpay fees | Variable (per transaction) |
-| Sentry + PostHog | $0 (free tiers) |
-| Total Core Spend | **~$35-40/month** |
+| Supabase Free | $0 (until ~800 users) |
+| Resend | $40-50 (realistic for 5K emails/month) |
+| Fast2SMS | $20-30 (realistic for 1.5K SMS/month) |
+| Monitoring (Sentry + Vercel) | $0 (free tiers) |
+| Razorpay fees | Variable (~2% per transaction) |
+| **Total MVP (0-500 users)** | **~$60-80/month** |
+| **After 800 users** | **~$135-165/month** (Supabase Pro $25 + increased comms) |
 
-> Costs scale with usage; start FREE, pay only when you exceed limits
+> **Revised Estimates**: More realistic cost projections based on actual email/SMS usage patterns. Plan for $70-80/month MVP costs.
+
+### **13.1 Storage Strategy & Migration Plan**
+```typescript
+STORAGE_CONFIG = {
+  mvp: 'Supabase Storage (1GB free)',
+  abstraction: 'Store only storage_key in DB (provider-agnostic)',
+  migration_trigger: {
+    storage_used: '50GB',
+    bandwidth: '10TB/month',
+    monthly_cost: '>$50 for storage alone'
+  },
+  migration_target: 'Cloudflare R2 ($0.015/GB vs Supabase $0.125/GB)',
+  implementation: 'Abstract storage layer from day 1 for easy migration'
+}
+```
+
+### **13.2 Photo Upload Limits (Revised)**
+```typescript
+MAX_UPLOAD_SIZES = {
+  photo: '15MB',        // Increased from 10MB - client-side compression
+  horoscope: '3MB',     // PDF, JPG, PNG - increased from 1MB
+  chatImage: '8MB',     // In-chat photo sharing - increased from 5MB
+  document: '5MB'       // Future use - increased from 2MB
+}
+```
 
 ## 14. Database Schema (PostgreSQL)
 ```sql
@@ -335,6 +366,136 @@ class SupabaseRealtimeManager {
 
 ## 16. System Health Monitoring
 
+### 16.1 Core Metrics
+- **Database**: Size, active connections, query performance
+- **Storage**: Used space, file count, largest files
+- **API**: Response times, error rates, request volume
+- **Users**: Active sessions, signups, conversions
+
+### 16.2 Implementation (Supabase + Vercel)
+- **Database Monitoring**: Supabase dashboard + custom SQL queries
+- **Storage Monitoring**: Supabase Storage API for usage stats
+- **API Monitoring**: Vercel Analytics + custom logging
+- **Alerting**: Email notifications for critical issues
+
+### 16.3 Health Check Endpoint
+```typescript
+// pages/api/health.ts
+export default async function handler(req, res) {
+  try {
+    // Basic database check
+    const { data: dbCheck, error: dbError } = await supabase
+      .from('health_check')
+      .select('*')
+      .limit(1);
+
+    if (dbError) throw dbError;
+
+    // Storage check (get bucket stats)
+    const { data: storageStats, error: storageError } = await supabase
+      .storage
+      .from('photos')
+      .list();
+
+    if (storageError) throw storageError;
+
+    return res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      database: { status: 'connected', tables: dbCheck?.length ? 'ok' : 'empty' },
+      storage: { 
+        status: 'connected', 
+        files: storageStats?.length || 0,
+        // Calculate size in MB
+        size_mb: (storageStats?.reduce((acc, file) => acc + (file.metadata?.size || 0), 0) / (1024 * 1024)).toFixed(2)
+      },
+      system: {
+        memory: process.memoryUsage().heapUsed / 1024 / 1024, // MB
+        uptime: process.uptime() // seconds
+      }
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+```
+
+### 16.4 Monitoring Setup
+1. **Vercel Cron Job** (runs every hour)
+   - Calls `/api/health` endpoint
+   - Logs results to `health_logs` table
+   - Sends email alert if status is not 'healthy'
+
+2. **Health Dashboard** (Admin-only)
+   - Simple dashboard showing:
+     - Current system status
+     - 24-hour trend of key metrics
+     - Recent errors or warnings
+     - Storage usage with warning at 80% capacity
+
+3. **Alert Thresholds**
+   - Storage > 80% of 1GB limit
+   - Database response time > 500ms
+   - API error rate > 5%
+   - More than 10 failed login attempts in 5 minutes
+
+### 16.5 Database Schema for Monitoring
+```sql
+-- Health check logs
+CREATE TABLE health_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  status TEXT NOT NULL, -- 'healthy', 'warning', 'error'
+  component TEXT, -- 'database', 'storage', 'api', 'auth'
+  message TEXT,
+  details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- System metrics (hourly snapshots)
+CREATE TABLE system_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  storage_used_mb DECIMAL(10,2),
+  storage_files INT,
+  db_size_mb DECIMAL(10,2),
+  active_sessions INT,
+  api_requests_1h INT,
+  error_rate_1h DECIMAL(5,2),
+  avg_response_time_ms DECIMAL(10,2)
+);
+
+-- Index for time-based queries
+CREATE INDEX idx_system_metrics_timestamp ON system_metrics(timestamp);
+
+-- Simple health check table
+CREATE TABLE health_check (
+  id INT PRIMARY KEY DEFAULT 1,
+  last_checked TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert initial row
+INSERT INTO health_check (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+```
+
+### 16.6 Implementation Notes
+- Uses existing Supabase free tier features
+- No additional cost for monitoring
+- Lightweight implementation
+- Easy to extend with more metrics
+- Simple to maintain
+
+### 16.7 Future Improvements
+- Add more detailed metrics as needed
+- Implement rate limiting on health endpoint
+- Add authentication for health endpoint
+- Set up more granular alerts
+- Add historical data analysis
+
 ### Health Dashboard (`/admin/health`)
 ```typescript
 interface SystemHealth {
@@ -527,36 +688,359 @@ export const checkDatabaseSize = async () => {
 
 > Timeline context: These four phases cover the **eight-week build cycle leading into launch (Month −2 to Month 0)**. Post-launch growth phases live in [LAUNCH-STRATEGY.md](./LAUNCH-STRATEGY.md) and pick up from Month 1 onward.
 
-### **Phase 1 – Foundation (Weeks 1-2)**
-- Scaffold Next.js 16 (App Router, TypeScript, Tailwind, shadcn/ui).
-- Provision Supabase project; configure Auth providers, Storage buckets, policies.
-- Define schema with Supabase migrations/SQL; enable RLS and seed baseline data.
-- Integrate Supabase Auth on web (client + server helpers) and set up CI (lint/test/typecheck).
+> **AI Development Note:** This roadmap is optimized for AI-driven development (Cursor/Windsurf). Build incrementally, test after each feature, and avoid generating entire pages in one prompt.
 
-### **Phase 2 – Core Platform (Weeks 3-5)**
-- Build profile onboarding, verification, reciprocity enforcement flows.
-- Implement search, filters, and interest/matching logic backed by Supabase.
-- Integrate Razorpay (web checkout + webhook Edge Function) and PhonePe fallback.
-- Set up plan management, entitlements, and dashboard widgets.
+### **Phase 1 – Foundation (Weeks 1-2)** [SIMPLIFIED FOR AI]
+**Day 1-2: Project Setup**
+- Scaffold Next.js 16 (App Router, TypeScript, Tailwind, shadcn/ui)
+- Provision Supabase project; configure Auth providers (email/password + Google only)
+- Create `.env.local` with all required keys
+- Set up GitHub repo with CI (lint/test/typecheck)
 
-### **Phase 3 – Communication & Admin (Weeks 6-7)**
-- Deliver realtime chat with lazy connections, read receipts, and file sharing.
-- Handle media uploads via Supabase Storage with watermarking pipeline.
-- Build admin panel (user moderation, payment tracking, privacy controls).
-- Configure notifications (Resend template set, Fast2SMS OTP flow).
+**Day 3-4: Core Schema (Minimal)**
+- Create ONLY: `users`, `profiles`, `photos` tables
+- Skip RLS policies initially (use service role for testing)
+- Generate TypeScript types: `npx supabase gen types typescript > types/database.ts`
+- Seed 5-10 test profiles manually
 
-### **Phase 4 – Launch Prep (Week 8)**
-- Add analytics dashboards (PostHog) and performance monitoring (Vercel Analytics).
-- Populate staging data, run E2E and load tests, finalize security hardening.
-- Document runbooks, set alerts for monitoring thresholds, point domain to Vercel.
+**Day 5-7: Basic Auth + Profile Flow**
+- Implement login/register pages (no OTP yet)
+- Build simple profile creation form (name, age, gender, community only)
+- Test: User can register → create profile → view own profile
+- **Checkpoint:** Working auth + basic profile (no photos, no search yet)
 
-## 18. Next Steps
+### **Phase 2 – Core Platform (Weeks 3-5)** [SIMPLIFIED FOR AI]
+**Week 3: Photos + Search**
+- Day 8-9: Photo upload (client-side compression with `browser-image-compression`, defer server watermarking)
+- Day 10-11: Basic search page (simple WHERE filters: age, gender, community)
+- Day 12-14: Profile detail page + photo gallery
+- **Checkpoint:** Users can upload photos, search, and view other profiles
+
+**Week 4: Interests + Subscriptions**
+- Day 15-16: Interest system (send/receive/accept/decline)
+- Day 17-18: Subscription plans table + basic plan display
+- Day 19-21: Razorpay integration (checkout page + webhook)
+- **Checkpoint:** Users can send interests and purchase plans
+
+**Week 5: Reciprocity (Basic)**
+- Day 22-23: Reciprocity state table + calculation functions
+- Day 24-25: Lock UI components for education/occupation/income fields
+- Day 26-28: Grace period logic + testing
+- **Checkpoint:** Basic reciprocity working (defer complex rules to post-launch)
+
+### **Phase 3 – Communication & Admin (Weeks 6-7)** [SIMPLIFIED FOR AI]
+**Week 6: Chat + Notifications**
+- Day 29-30: Supabase Realtime setup + basic message table
+- Day 31-32: Chat UI (message list + send form)
+- Day 33-35: Email notifications (Resend integration, 3 templates: welcome, interest received, match)
+- **Checkpoint:** Users can chat and receive email notifications
+
+**Week 7: Admin Panel (Basic)**
+- Day 36-37: Admin auth + simple dashboard (user count, profile count)
+- Day 38-39: User management (list, search, suspend/activate)
+- Day 40-42: Profile approval queue + photo moderation
+- **Checkpoint:** Admin can manage users and approve profiles
+
+### **Phase 4 – Launch Prep (Week 8)** [SIMPLIFIED FOR AI]
+**Week 8: Polish + Launch**
+- Day 43-44: Add RLS policies (now that features work)
+- Day 45-46: Mobile responsive fixes + PWA manifest
+- Day 47-48: SEO (meta tags, sitemap, robots.txt)
+- Day 49-50: Staging deployment + smoke tests
+- Day 51-52: Production deployment + monitoring setup
+- Day 53-56: Buffer for bug fixes + launch on Jan 5, 2026
+- **Checkpoint:** Platform live with 20-30 seed profiles
+
+## 18. Environment Variables (.env.local)
+
+```bash
+# Supabase (Required Day 1)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Payments (Required Week 4)
+RAZORPAY_KEY_ID=rzp_test_xxxxx
+RAZORPAY_KEY_SECRET=xxxxx
+
+# Communications (Required Week 6)
+RESEND_API_KEY=re_xxxxx
+FAST2SMS_API_KEY=xxxxx
+
+# Monitoring (Optional, add Week 8)
+NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
+NEXT_PUBLIC_POSTHOG_KEY=phc_xxxxx
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+
+# Admin (Required Week 7)
+ADMIN_EMAIL=admin@matri.naveevo.com
+ADMIN_PASSWORD_HASH=xxxxx
+```
+
+## 19. API Routes Structure
+
+### **Authentication APIs**
+```
+POST   /api/auth/register          - Register new user
+POST   /api/auth/login             - Login user
+POST   /api/auth/logout            - Logout user
+POST   /api/auth/reset-password    - Request password reset
+GET    /api/auth/session           - Get current session
+```
+
+### **Profile APIs**
+```
+GET    /api/profiles               - List profiles (with filters)
+POST   /api/profiles               - Create profile
+GET    /api/profiles/[id]          - Get single profile
+PATCH  /api/profiles/[id]          - Update profile
+DELETE /api/profiles/[id]          - Delete profile
+GET    /api/profiles/me            - Get current user's profile
+```
+
+### **Photo APIs**
+```
+POST   /api/photos                 - Upload photo
+DELETE /api/photos/[id]            - Delete photo
+PATCH  /api/photos/[id]/primary    - Set as primary photo
+```
+
+### **Interest APIs**
+```
+GET    /api/interests              - List sent/received interests
+POST   /api/interests              - Send interest
+PATCH  /api/interests/[id]         - Accept/decline interest
+DELETE /api/interests/[id]         - Withdraw interest
+```
+
+### **Search APIs**
+```
+GET    /api/search                 - Search profiles
+GET    /api/search/suggestions     - Get search suggestions
+```
+
+### **Subscription APIs**
+```
+GET    /api/subscriptions          - Get user subscriptions
+POST   /api/subscriptions/checkout - Create Razorpay order
+POST   /api/subscriptions/verify   - Verify payment webhook
+```
+
+### **Chat APIs**
+```
+GET    /api/messages               - List conversations
+GET    /api/messages/[id]          - Get conversation messages
+POST   /api/messages               - Send message
+```
+
+### **Admin APIs**
+```
+GET    /api/admin/users            - List all users
+PATCH  /api/admin/users/[id]       - Update user status
+GET    /api/admin/profiles/pending - Get pending approvals
+PATCH  /api/admin/profiles/[id]    - Approve/reject profile
+GET    /api/admin/stats            - Get dashboard stats
+```
+
+## 20. Component Architecture
+
+### **Layout Components**
+```
+app/
+├── (auth)/
+│   ├── layout.tsx              - Auth layout (centered, no nav)
+│   ├── login/page.tsx
+│   └── register/page.tsx
+├── (dashboard)/
+│   ├── layout.tsx              - Main layout (header, sidebar, footer)
+│   ├── dashboard/page.tsx
+│   ├── search/page.tsx
+│   ├── profile/[id]/page.tsx
+│   └── interests/page.tsx
+└── (admin)/
+    ├── layout.tsx              - Admin layout (admin nav)
+    └── admin/
+        ├── page.tsx
+        ├── users/page.tsx
+        └── profiles/page.tsx
+```
+
+### **Shared Components**
+```
+components/
+├── ui/                         - shadcn/ui components
+│   ├── button.tsx
+│   ├── card.tsx
+│   ├── input.tsx
+│   └── dialog.tsx
+├── shared/
+│   ├── Header.tsx
+│   ├── Footer.tsx
+│   ├── Sidebar.tsx
+│   └── ProfileCard.tsx
+└── features/
+    ├── auth/
+    │   ├── LoginForm.tsx
+    │   └── RegisterForm.tsx
+    ├── profile/
+    │   ├── ProfileForm.tsx
+    │   ├── PhotoUpload.tsx
+    │   └── ProfileGallery.tsx
+    ├── search/
+    │   ├── SearchFilters.tsx
+    │   └── SearchResults.tsx
+    └── interests/
+        ├── InterestButton.tsx
+        └── InterestList.tsx
+```
+
+## 21. Database Schema (Phased Approach)
+
+### **Phase 1 (Week 1-2): Core Tables**
+```sql
+-- users table (managed by Supabase Auth)
+-- profiles table (basic fields only)
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  age INTEGER NOT NULL,
+  gender VARCHAR(10) NOT NULL,
+  community VARCHAR(50) NOT NULL,
+  religion VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- photos table
+CREATE TABLE photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  storage_path VARCHAR(255) NOT NULL,
+  is_primary BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **Phase 2 (Week 3-5): Feature Tables**
+```sql
+-- interests table
+CREATE TABLE interests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID REFERENCES profiles(id),
+  receiver_id UUID REFERENCES profiles(id),
+  status VARCHAR(20) DEFAULT 'pending',
+  message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- subscriptions table
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  plan_type VARCHAR(20) NOT NULL,
+  status VARCHAR(20) DEFAULT 'active',
+  start_date TIMESTAMP DEFAULT NOW(),
+  end_date TIMESTAMP,
+  payment_id VARCHAR(255)
+);
+
+-- reciprocity_state table
+CREATE TABLE reciprocity_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  field_bundle VARCHAR(50) NOT NULL,
+  is_eligible BOOLEAN DEFAULT FALSE,
+  last_calculated TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **Phase 3 (Week 6-7): Communication Tables**
+```sql
+-- messages table
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID REFERENCES profiles(id),
+  receiver_id UUID REFERENCES profiles(id),
+  content TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+## 22. Supabase RLS Policies (Add Week 8)
+
+```sql
+-- Profiles: Users can view approved profiles
+CREATE POLICY "Profiles are viewable by authenticated users"
+ON profiles FOR SELECT
+TO authenticated
+USING (is_approved = true);
+
+-- Profiles: Users can edit their own profile
+CREATE POLICY "Users can edit own profile"
+ON profiles FOR UPDATE
+TO authenticated
+USING (user_id = auth.uid());
+
+-- Photos: Users can view photos of approved profiles
+CREATE POLICY "Photos are viewable by authenticated users"
+ON photos FOR SELECT
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE profiles.id = photos.profile_id 
+    AND profiles.is_approved = true
+  )
+);
+
+-- Interests: Users can view their own interests
+CREATE POLICY "Users can view own interests"
+ON interests FOR SELECT
+TO authenticated
+USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+
+-- Messages: Users can view their own messages
+CREATE POLICY "Users can view own messages"
+ON messages FOR SELECT
+TO authenticated
+USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+```
+
+## 23. AI Development Best Practices
+
+### **For Cursor/Windsurf:**
+
+1. **Incremental Prompts**
+   - ❌ "Build the entire profile page with all features"
+   - ✅ "Create a basic profile form with name, age, gender fields"
+
+2. **Test After Each Feature**
+   - Build auth → test login/register
+   - Build profile creation → test form submission
+   - Build search → test filtering
+
+3. **Use Templates**
+   - Create one API route correctly, then replicate pattern
+   - Build one form component, then reuse for other forms
+
+4. **Type Safety First**
+   - Generate database types before building components
+   - Use Zod schemas for form validation
+
+5. **Rollback Strategy**
+   - Git commit after each working feature
+   - Tag major milestones: `git tag week-1-complete`
+
+## 24. Next Steps
 1. Confirm Supabase and Vercel projects plus GitHub repo are provisioned.
-2. Establish migration workflow (Supabase SQL or db diff) and CI checks.
-3. Implement MVP slices following the roadmap, validating against FEATURE-REFERENCE.md.
-4. Configure monitoring alerts before opening beta access.
+2. Create `.env.local` with all required keys (see section 18).
+3. Generate TypeScript types: `npx supabase gen types typescript > types/database.ts`
+4. Follow day-by-day roadmap (section 17), testing after each checkpoint.
+5. Configure monitoring alerts before opening beta access.
 
 ---
 
-**Last Updated:** October 2025  
-**Document Version:** 3.0
+**Last Updated:** November 6, 2025  
+**Document Version:** 5.0 (AI-Optimized for Implementation)  
+**Implementation Start:** November 7, 2025

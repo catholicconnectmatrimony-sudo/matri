@@ -20,9 +20,9 @@
 - **Revenue Goal**: ₹50,000+ MRR by month 6
 - **Community Goal**: Establish CC Matrimony as primary Bunt matrimony platform
 
-## 2. Pre-Launch Preparation (Weeks 1-12)
+## 2. Pre-Launch Preparation (8-Week Build Cycle)
 
-> **Timeline bridge:** Weeks 1-8 align with the implementation roadmap in [TECH-STACK.md](./TECH-STACK.md) and represent Months −2 to 0 (build-up to launch). The month-based phases below pick up from Month 0 (launch) and continue through Month 12.
+> **Timeline**: Development starts Nov 7, 2025 → Launch Jan 5, 2026 (8 weeks). This aligns with implementation roadmap in [TECH-STACK.md](./TECH-STACK.md). Post-launch phases (Months 1-12) follow below.
 
 ### **2.1 Technical Preparation**
 - ✅ Complete platform development
@@ -46,10 +46,14 @@
 - ✅ Set up social media accounts
 - ✅ Prepare launch event materials
 
-## 3. Phase 1: Bunt Community Launch (Months 1-3)
+## 3. Phase 1: Bunt Community ONLY Launch (Months 1-3 Post-Launch)
+
+> **Launch Date**: January 5, 2026 | **Strategy**: Single community focus for faster product-market fit validation
 
 ### **3.1 Target Audience**
-- **Primary**: Bunt community in Mangalore and Udupi
+- **Primary**: Bunt community in Mangalore and Udupi ONLY
+- **Communities Available**: Hindu/Bunt (sub-communities: Shetty, Hegde, Poojary, Kotian, Karkera)
+- **Other Communities**: Coming Soon pages (database ready, but not promoted)
 - **Age Group**: 22-35 years (marriageable age)
 - **Education**: Graduates and above
 - **Income**: Middle to upper-middle class
@@ -101,13 +105,15 @@
 - **Marketing Support**: Provide marketing materials and support
 - **Revenue Sharing**: 10% commission on successful matches from their network
 
-## 4. Phase 2: Regional Expansion (Months 4-6)
+## 4. Phase 2: Regional Expansion (Months 4-6 Post-Launch)
 
-### **4.1 Target Communities**
-- **Billava Community**: Second priority community
-- **Mangalorean Christian**: Third priority community
-- **Devadiga Community**: Fourth priority community
-- **Other Coastal Communities**: Gradual expansion
+> **Timing**: April-June 2026 | **Strategy**: Add other Tulunadu communities after Bunt validation
+
+### **4.1 Target Communities** (Expansion Schedule)
+- **Month 4 (Week 4 Post-Launch)**: Add Billava Community
+- **Month 5**: Add Mangalorean Christian Community
+- **Month 6**: Add Devadiga, Mogaveera, and other Hindu communities
+- **All Communities**: Hindu, Christian, Muslim portals fully operational by end of Month 6
 
 ### **4.2 Expansion Strategy**
 
@@ -296,6 +302,8 @@
 
 ---
 
-**Last Updated:** December 2024  
-**Document Version:** 1.0  
-**Next Review:** January 2025
+**Last Updated:** November 6, 2025  
+**Document Version:** 2.0 (Finalized)  
+**Development Start:** November 7, 2025  
+**Launch Date:** January 5, 2026 (8 weeks)  
+**Next Review:** Post-launch (January 2026)

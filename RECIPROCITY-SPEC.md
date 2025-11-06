@@ -28,14 +28,20 @@
 
 ## 4. Plan Structure
 
-| Plan | Photo Limit | Reciprocity | Features |
+| Plan | Photo Slots | Reciprocity | Features |
 |------|-------------|-------------|----------|
-| Free | 2 photos | Enforced | Basic search, limited daily views |
-| Paid | 5 photos | Enforced | All free features + unlimited views, advanced search |
-| VIP | 10 photos | Bypassed | All paid features + priority support, matchmaking |
+| Free | 1 profile + 1 album | Enforced | Basic search, 10 daily views |
+| Paid | 1 profile + 9 album + 3 family/group | Admin-configurable (default OFF) | All free + unlimited views, advanced search |
 
-- **Reciprocity**: Enforced for free/paid, bypassed for VIP
-- **Admin Override**: Available for all plans in special cases
+- **Reciprocity**: Enforced for Free by default. Paid tiers start with reciprocity disabled but can be enabled per plan from the admin dashboard.
+- **Admin Override**: Available for all plans in special cases (single member or entire tier).
+
+### Photo Slot Details
+- **Profile Photo**: Required primary image shown in listings (1 slot all plans)
+- **Album Photos**: Showcase gallery (Free: 1, Paid: 9)
+- **Family / Group Photos**: Separate bucket for family or group pictures (Paid only: 3 slots)
+- **Formats & Size**: PNG, GIF, JPG, JPEG, WebP up to 30 MB per upload
+- **Compression**: Server-side pipeline converts to WebP (fallback JPEG 85) and optionally caps dimensions at 1920×1920 to save bandwidth; can be relaxed if storage budget allows.
 
 ## 5. UX Flows
 ### 5.1 Locked State Indicators
@@ -132,3 +138,158 @@ export async function GET(request: Request) {
 ## 9. Future Enhancements
 - A/B test prompt copy and timing to boost reciprocity completion.
 - Prototype partial reveals (blurred photos, summary income band) post-mutual interest.
+
+---
+
+## 10. AI Implementation Guide (Week 5)
+
+### **Implementation Order for AI Development:**
+
+**Day 22-23: Database Setup**
+```sql
+-- Step 1: Create reciprocity_state table
+CREATE TABLE reciprocity_state (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  field_bundle VARCHAR(50) NOT NULL,
+  is_eligible BOOLEAN DEFAULT FALSE,
+  last_calculated TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, field_bundle)
+);
+
+-- Step 2: Create helper function
+CREATE OR REPLACE FUNCTION check_reciprocity(
+  viewer_id UUID,
+  target_id UUID,
+  bundle VARCHAR(50)
+) RETURNS BOOLEAN AS $$
+BEGIN
+  -- Check if viewer has shared the field
+  RETURN EXISTS (
+    SELECT 1 FROM reciprocity_state
+    WHERE user_id = viewer_id
+    AND field_bundle = bundle
+    AND is_eligible = true
+  );
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**Day 24: Build Calculation Functions**
+```typescript
+// lib/reciprocity/calculator.ts
+export function hasEducation(profile: Profile): boolean {
+  return !!(profile.education_level && profile.education_field);
+}
+
+export function hasOccupation(profile: Profile): boolean {
+  return !!(profile.occupation_sector && profile.job_title);
+}
+
+export function hasIncome(profile: Profile): boolean {
+  return !!profile.annual_income;
+}
+
+export function hasFamilyDetails(profile: Profile): boolean {
+  return !!(
+    profile.father_name && 
+    profile.mother_name && 
+    profile.siblings_count !== null
+  );
+}
+
+export async function updateReciprocityState(userId: string) {
+  const profile = await getProfile(userId);
+  
+  await supabase.from('reciprocity_state').upsert([
+    { user_id: userId, field_bundle: 'education', is_eligible: hasEducation(profile) },
+    { user_id: userId, field_bundle: 'occupation', is_eligible: hasOccupation(profile) },
+    { user_id: userId, field_bundle: 'income', is_eligible: hasIncome(profile) },
+    { user_id: userId, field_bundle: 'family', is_eligible: hasFamilyDetails(profile) }
+  ]);
+}
+```
+
+**Day 25: Build UI Components**
+```typescript
+// components/profile/LockedField.tsx
+interface LockedFieldProps {
+  fieldName: string;
+  canView: boolean;
+  value?: string;
+  onUnlock: () => void;
+}
+
+export function LockedField({ fieldName, canView, value, onUnlock }: LockedFieldProps) {
+  if (canView) {
+    return <div className="text-gray-900">{value}</div>;
+  }
+  
+  return (
+    <div className="flex items-center gap-2 text-gray-400">
+      <LockIcon className="w-4 h-4" />
+      <span>Add your {fieldName} to unlock</span>
+      <Button onClick={onUnlock} variant="link">Edit Profile</Button>
+    </div>
+  );
+}
+```
+
+**Day 26-28: Grace Period + Testing**
+```typescript
+// lib/reciprocity/grace-period.ts
+export async function isInGracePeriod(userId: string): Promise<boolean> {
+  const user = await getUser(userId);
+  const hoursSinceCreation = (Date.now() - user.created_at.getTime()) / (1000 * 60 * 60);
+  
+  if (hoursSinceCreation < 24) return true;
+  
+  const viewCount = await getProfileViewCount(userId);
+  if (viewCount < 5) return true;
+  
+  return false;
+}
+
+export async function canViewField(
+  viewerId: string,
+  targetId: string,
+  fieldBundle: string
+): Promise<boolean> {
+  // Check grace period
+  if (await isInGracePeriod(viewerId)) return true;
+  
+  // Check premium status
+  const viewer = await getUser(viewerId);
+  if (viewer.plan_type !== 'free') return true;
+  
+  // Check reciprocity
+  const { data } = await supabase.rpc('check_reciprocity', {
+    viewer_id: viewerId,
+    target_id: targetId,
+    bundle: fieldBundle
+  });
+  
+  return data;
+}
+```
+
+### **Testing Checklist:**
+- [ ] User in grace period can view all fields
+- [ ] User after grace period sees locked fields
+- [ ] Adding education unlocks education on other profiles
+- [ ] Premium users bypass reciprocity
+- [ ] Admin can override reciprocity for specific users
+- [ ] Reciprocity state updates when profile is edited
+
+### **Common AI Mistakes to Avoid:**
+1. ❌ Don't implement all field bundles at once → Start with education only
+2. ❌ Don't build complex grace period logic first → Start with simple time-based check
+3. ❌ Don't create elaborate UI → Start with simple lock icon + tooltip
+4. ❌ Don't optimize prematurely → Make it work, then optimize
+
+### **Defer to Post-Launch:**
+- Photo count-based reciprocity (complex logic)
+- Horoscope reciprocity (optional feature)
+- Advanced grace period rules
+- A/B testing of prompts
+- Partial field reveals (blurred content)
