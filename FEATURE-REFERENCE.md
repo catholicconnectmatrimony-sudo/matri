@@ -86,10 +86,13 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 
 ### 🧱 Tech Stack Snapshot
 - **Frontend:** Next.js 16.0.1 (React 19.2.0) on Vercel Hobby with Tailwind CSS 4.1.16 + Radix UI + shadcn/ui.
-- **Backend/Data:** Supabase Free (Postgres, Auth, Storage, Edge Functions) within quota limits.
+- **Backend/Data:** Supabase Free (Postgres, Auth, Edge Functions) within quota limits.
+- **Storage:** Cloudflare R2 (private bucket, signed URLs via Vercel API; setup starts Week 3).
 - **APIs/Workers:** Vercel serverless routes and Supabase Edge Functions (no scheduled jobs).
 - **Payments & Comms:** Razorpay (primary), PhonePe (backup), Resend email, Fast2SMS SMS.
 - **Observability:** Sentry (free tier) and Supabase logs.
+
+> Validation note: Use Zod + React Hook Form starting Week 3+ (initial UI uses lightweight validation).
 
 ---
 
@@ -275,20 +278,20 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **Real-time Chat** | ✅ | P0 | Supabase Realtime instant messaging |
-| **Online/Last Seen Status** | ✅ | P1 | Show online & last active time |
-| **Unread Count Badge** | ✅ | P1 | Real-time unread message count |
-| **Chat History** | ✅ | P1 | Load older messages with infinite scroll |
-| **Chat Access Control** | ✅ | P0 | Premium-only feature |
-| **Message Character Limit** | ✅ | P0 | Max 500 chars per message |
-| **Message Delivery Status** | ✅ | P1 | Sent ✓, Delivered ✓✓, Read ✓✓ |
-| **Delete Message** | ✅ | P2 | Delete for me (not for everyone) |
-| **Typing Indicators** | ✅ | P2 | "User is typing..." |
-| **Read Receipts** | ✅ | P1 | Sent/delivered/read checkmarks |
-| **Photo Sharing in Chat** | ✅ | P1 | Send images (max 5MB, watermarked) |
+| **Real-time Chat** | 🔄 | P2 (Phase 3/4) | Supabase Realtime instant messaging (deferred) |
+| **Online/Last Seen Status** | 🔄 | P2 (Phase 3/4) | Show online & last active time (deferred) |
+| **Unread Count Badge** | 🔄 | P2 (Phase 3/4) | Real-time unread message count (deferred) |
+| **Chat History** | 🔄 | P2 (Phase 3/4) | Load older messages with infinite scroll (deferred) |
+| **Chat Access Control** | 🔄 | P2 (Phase 3/4) | Premium-only feature (deferred) |
+| **Message Character Limit** | 🔄 | P2 (Phase 3/4) | Max 500 chars per message (deferred) |
+| **Message Delivery Status** | 🔄 | P2 (Phase 3/4) | Sent ✓, Delivered ✓✓, Read ✓✓ (deferred) |
+| **Delete Message** | 🔄 | P3 | Delete for me (not for everyone) (deferred) |
+| **Typing Indicators** | 🔄 | P3 | "User is typing..." (deferred) |
+| **Read Receipts** | 🔄 | P2 (Phase 3/4) | Sent/delivered/read checkmarks (deferred) |
+| **Photo Sharing in Chat** | 🔄 | P2 (Phase 3/4) | Send images (max 5MB, watermarked) (deferred) |
 | **File Attachments** | ❌ | P2 | Removed from MVP - text + photo sharing only (PDF sharing deferred to Phase 2) |
-| **Report Abuse in Chat** | ✅ | P0 | Report with categories |
-| **Block User from Chat** | ✅ | P0 | Block user, no further messages |
+| **Report Abuse in Chat** | 🔄 | P2 (Phase 3/4) | Report with categories (deferred) |
+| **Block User from Chat** | 🔄 | P2 (Phase 3/4) | Block user, no further messages (deferred) |
 | **Chat Backup/Export** | ❌ | P2 | Deferred: Complex implementation for MVP |
 | **Chat Search** | ❌ | P2 | Deferred: Not essential for core functionality |
 | **Chat Encryption** | ❌ | P2 | Deferred: Complex security implementation |
