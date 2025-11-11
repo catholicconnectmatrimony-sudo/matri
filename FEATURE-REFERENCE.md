@@ -120,7 +120,6 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 ---
 
 ## 👤 PROFILE MANAGEMENT
-
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Basic Profile Fields** | ✅ | P0 | Name, age, gender, location, education, occupation |
@@ -145,61 +144,14 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 | **Profile Edit History** | ✅ | P1 | Track all profile changes with timestamps |
 | **Profile Backup/Restore** | ❌ | P2 | Deferred: Complex implementation not needed for MVP |
 
-### **Community-Specific Profile Fields (Tulunadu Focus)**
-| Feature | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| **Caste/Sub-caste** | ✅ | P0 | Bunt, Billava, Devadiga, Mogaveera, etc. (Hindu profiles) |
-| **Bunt Sub-communities** | ✅ | P0 | Shetty, Hegde, Poojary, etc. (Primary focus community) |
-| **Diocese** | ✅ | P1 | Church diocese (Christian profiles) |
-| **Parish** | ✅ | P1 | Church parish (Christian profiles) |
-| **Native Place** | ✅ | P1 | Birth place (different from current location) |
-| **Mother Tongue** | ✅ | P0 | Kannada, Tulu, Konkani, etc. (for matching preferences only) |
-| **Religion Selection** | ✅ | P0 | Hindu, Christian, Muslim |
-| **Community Selection** | ✅ | P0 | Cascading based on religion |
-| **Tulunadu Region** | ✅ | P0 | Specific to Coastal Karnataka region |
-| **Local Festivals** | ✅ | P1 | Community-specific festival preferences |
+Profile fields specification
+- For the authoritative list of fields, validation, reciprocity mapping, and phasing, see PROFILE-FIELDS.md.
+- Summary:
+  - Week 1-2 (MVP core): minimal required set (name, gender, DOB→age, phone OTP, email, password, marital_status, created_by).
+  - Week 3+: education/occupation/income/family/photos wired, contribute to reciprocity; Cloudflare R2 for media (15MB, signed URLs).
+  - Address-heavy PII deferred to later phase; preferences optional at creation.
 
-### **Advanced Profile Fields (P0/P1)**
-| Feature | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| **Height** | ✅ | P0 | Height in cm/feet |
-| **Annual Income Range** | ✅ | P0 | ₹2-3L to Above 1Cr |
-| **Employed In (Sector)** | ✅ | P0 | Private/Government/Business/Defense |
-| **Children Status** | ✅ | P0 | No children/Have children |
-| **About Me / Bio** | ✅ | P0 | Free text (500 chars, profanity filtered) |
-| **Languages Known** | ✅ | P0 | Multiple selection: English, Hindi, Kannada, Tulu, Konkani, etc. |
-| **Education Level** | ✅ | P0 | High School, Diploma, Bachelor's Degree, Master's Degree, Doctorate (PhD), Post Graduate Diploma |
-| **Occupation Sector** | ✅ | P0 | Information Technology, Healthcare, Education, Finance & Banking, Engineering, Government Services, Business & Entrepreneurship, Media & Entertainment, Legal, Defense & Security, Others |
-| **Work Location** | ✅ | P0 | Current city/state where working |
-| **Body Type** | ✅ | P1 | Slim/Athletic/Average/Heavy |
-| **Blood Group** | ✅ | P1 | A+, B+, O+, AB+, A-, B-, O-, AB- |
-| **Diet** | ✅ | P1 | Vegetarian, Non-Vegetarian, Eggetarian, Vegan |
-| **Smoking** | ✅ | P1 | Never/Occasionally/Regularly |
-| **Drinking** | ✅ | P1 | Never/Socially/Regularly |
-| **Residency Status** | ✅ | P1 | Citizen/PR/Work Visa/Student Visa |
-| **Citizenship** | ✅ | P1 | Country, dual citizenship option |
-| **Willing to Relocate** | ✅ | P1 | Yes/No/Maybe/Within State/Abroad |
-| **Family Details** | ✅ | P1 | Father, mother, siblings info |
-| **Family Type** | ✅ | P1 | Nuclear/Joint |
-| **Manglik Status** | ✅ | P1 | Yes/No/Don't know/NA (Hindu) |
-| **Education Field/Subject** | ✅ | P1 | Engineering, Business, Medicine, Computer Science, Arts, Science, Commerce, Education, Law, Others |
-| **Graduation Year** | ✅ | P1 | Dropdown: 2020, 2021, 2022, 2023, 2024, etc. |
-| **Job Title/Role** | ✅ | P1 | Based on sector selection (e.g., IT → Software Engineer, Data Analyst; Healthcare → Doctor, Nurse, Pharmacist) |
-| **Work Experience** | ✅ | P1 | 0-1 years, 2-5 years, 5-10 years, 10+ years |
-
-### **Advanced Profile Fields (P2)**
-| Feature | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| **Weight** | ✅ | P2 | Weight in kg |
-| **Complexion** | ✅ | P2 | Fair/Wheatish/Dusky/Dark |
-| **Spectacles** | ✅ | P2 | Yes/No/Contact Lenses |
-| **Family Status** | ✅ | P2 | Lower Middle/Middle/Upper Middle/Affluent |
-| **Family Values** | ✅ | P2 | Traditional/Moderate/Liberal |
-| **Additional Education Details** | ✅ | P2 | Text field for specific degree names, certifications, or additional qualifications |
-| **Institution Name** | ✅ | P2 | Optional text field for college/university name |
-| **Grade/Percentage** | ✅ | P2 | Optional: First Class, Second Class, Distinction, etc. |
-| **Additional Occupation Details** | ✅ | P2 | Text field for specific company, designation, or additional details |
-| **Company Size** | ✅ | P2 | Startup, SME, MNC, Government |
+Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 breakdowns have been consolidated into PROFILE-FIELDS.md.
 
 ---
 
