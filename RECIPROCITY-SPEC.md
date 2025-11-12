@@ -46,7 +46,7 @@
 - **Profile Photo**: Required primary image shown in listings (1 slot all plans)
 - **Album Photos**: Showcase gallery (Free: 1, Paid: 9)
 - **Family / Group Photos**: Separate bucket for family or group pictures (Paid only: 3 slots)
-- **Formats & Size**: PNG, GIF, JPG, JPEG, WebP up to 30 MB per upload
+- **Formats & Size**: PNG, GIF, JPG, JPEG, WebP up to 15 MB per upload (client-side compression to <500KB before upload)
 - **Compression**: Client-side compression from Week 3; optional server-side Sharp pipeline converts to WebP (fallback JPEG 85) and can cap dimensions at 1920×1920 to save bandwidth.
 
 ## 5. UX Flows

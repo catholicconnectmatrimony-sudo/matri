@@ -47,7 +47,7 @@
 - **Week 1-2 (MVP)**: Simple WHERE clauses only
   ```sql
   WHERE religion = 'hindu' 
-    AND community = 'bunt'
+    AND primary_community = 'bunt'
     AND age BETWEEN 25 AND 35
     AND gender = 'female'
   ```
@@ -279,9 +279,10 @@ CREATE TABLE communities (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   religion VARCHAR(50) NOT NULL,
-  region VARCHAR(100) NOT NULL,
-  priority INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT TRUE
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE sub_communities (
@@ -557,7 +558,7 @@ const ALERTS = {
 ### Dynamic Sitemaps
 - Generate sitemaps for profiles and communities
 - Update sitemap on profile creation/update
-- Community-specific sitemaps with priority scoring
+- Auto-generate sitemap entries for all active communities
 
 ### OpenGraph Implementation
 - Dynamic OpenGraph images per community
@@ -681,7 +682,7 @@ export const checkDatabaseSize = async () => {
 
 ## 17. Implementation Roadmap
 
-> Timeline context: These four phases cover the **eight-week build cycle leading into launch (Month −2 to Month 0)**. MVP focus: Bunt community (see PROFILE-FIELDS.md section 1.1).
+> Timeline context: These four phases cover the **eight-week build cycle leading into launch (Month −2 to Month 0)**. All communities are treated equally - community pages auto-generate from database.
 
 > **AI Development Note:** This roadmap is optimized for AI-driven development (Cursor/Windsurf). Build incrementally, test after each feature, and avoid generating entire pages in one prompt.
 
@@ -1109,7 +1110,7 @@ USING (sender_id = auth.uid() OR receiver_id = auth.uid());
 ```
 / - Home
 /[religion] - Religion page (e.g., /hindu, /christian)
-/[religion]/[community] - Community page (e.g., /hindu/bunt, /christian/mangalorean)
+/[religion]/[community] - Community page (auto-generated from database, e.g., /hindu/bunt, /christian/latin-catholic)
 ```
 
 ### 27.2 Next.js Dynamic Routing
@@ -1135,4 +1136,4 @@ app/
 - **Sitemap**: Dynamic generation for all active communities
 - **OpenGraph**: Community-specific meta tags
 
-> **Note**: Full implementation details, database schema, and middleware code will be added during Week 7 (SEO & Polish phase). Community options and MVP focus are defined in [PROFILE-FIELDS.md](./PROFILE-FIELDS.md).
+> **Note**: Full implementation details, database schema, and middleware code will be added during Week 7 (SEO & Polish phase). Community pages are auto-generated from database - all communities use the same template. Community options are defined in [PROFILE-FIELDS.md](./PROFILE-FIELDS.md).

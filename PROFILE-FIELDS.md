@@ -3,12 +3,7 @@
 ## 1. Purpose
 - Single source of truth for profile fields, validation, reciprocity mapping, and phasing to keep AI implementation simple.
 - Aligns with TECH-STACK (frontend-first, Zod Week 3+, Cloudflare R2 media, vertical slices).
-
-## 1.1 MVP Focus
-- **Primary Community**: Bunt (Hindu) - MVP launch focus
-- **Sub-communities**: Shetty, Hegde (P0), Poojary, Kotian (P1), Karkera (P2)
-- **Domain**: matri.naveevo.com
-- **Target Region**: Coastal Karnataka, Tulunadu Region
+- All communities are treated equally - community pages are auto-generated from database.
 
 ## 2. Condition Schema (standardized)
 Use a consistent condition format:
@@ -63,7 +58,7 @@ Age rules: Female ≥18, Male ≥21 (derived from DOB).
 |---|---|---|---|---|
 | native_place | Native Place | text | P1 | Birth place (differs from current location) |
 | mother_tongue | Mother Tongue | dropdown | P0 | Kannada, Tulu, Konkani, etc. (matching only) |
-| tulunadu_region | Tulunadu Region | dropdown | P1 | Coastal Karnataka (for Tulunadu communities) |
+| native_region | Native Region | dropdown | P1 | Regional identifier (optional, for matching) |
 | local_festivals | Local Festivals | multi_select | P1 | Community-specific preferences |
 
 ## 6. Education & Professional (Week 3+; contributes to reciprocity)

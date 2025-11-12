@@ -123,8 +123,8 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Basic Profile Fields** | ✅ | P0 | Name, age, gender, location, education, occupation |
-| **Photo Upload** | ✅ | P0 | Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group (Max 10MB per photo) |
-| **Photo Formats & Size** | ✅ | P0 | PNG/GIF/JPG/JPEG/WebP up to 10 MB per photo (reduced from 30MB for storage optimization) |
+| **Photo Upload** | ✅ | P0 | Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group (Max 15MB per photo) |
+| **Photo Formats & Size** | ✅ | P0 | PNG/GIF/JPG/JPEG/WebP up to 15 MB per photo (client-side compression to <500KB before upload) |
 | **Photo Watermarking** | ✅ | P1 | Small watermark on all photos (visible in-app and downloads) for branding/security |
 | **Profile Completeness** | ✅ | P1 | Real-time score (0-100%) with progress bar; excludes intentionally skipped fields |
 | **Profile ID Generation** | ✅ | P0 | Auto-generated CCM001234 format |
@@ -402,20 +402,18 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ---
 
-## 🌐 COMMUNITY & PORTALS (Tulunadu Focus)
+## 🌐 COMMUNITY & PORTALS
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Main Platform** | ✅ | P0 | ccmatrimony.com with all communities |
-| **Religion Portals** | ✅ | P0 | /hindu, /christian, /muslim with scoped browsing |
-| **Community Landing Pages** | ✅ | P1 | SEO landing pages for key communities (Bunt, Billava, Mangalorean Christian, etc.) |
-| **Bunt Community Portal** | ✅ | P0 | Primary focus community with dedicated features |
-| **Tulunadu Regional Portal** | ✅ | P0 | Coastal Karnataka specific portal |
+| **Religion Pages** | ✅ | P0 | /hindu, /christian, /muslim with scoped browsing |
+| **Community Pages** | ✅ | P0 | Auto-generated from database (/religion/community), all communities use same template |
 | **Auto-Subfolder Filtering** | ✅ | P0 | Detect subfolder, auto-filter profiles by religion |
-| **Cross-listing Logic** | ✅ | P0 | Display profiles on all relevant portals |
+| **Cross-listing Logic** | ✅ | P0 | Display profiles on all relevant pages |
 | **Religion Visibility Rules** | ✅ | P0 | Default: same religion, optional opt-in to others (user-controlled) |
-| **Caste Visibility Rules** | ✅ | P1 | Default: same caste, option: other castes (user-controlled) |
-| **Advanced SEO** | ✅ | P1 | Schema.org, social previews, per-subfolder branding |
+| **Community Visibility Rules** | ✅ | P1 | Default: same community, option: other communities (user-controlled) |
+| **Advanced SEO** | ✅ | P1 | Schema.org, social previews, dynamic meta tags per community |
 | **Local Language Support** | ❌ | P2 | UI remains English-only; mother-tongue field powers matching |
 | **Community Success Stories** | ✅ | P1 | Local success stories and testimonials |
 
@@ -826,7 +824,7 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 6. **Reference Documents**
    - See [TECH-STACK.md](./TECH-STACK.md) for detailed day-by-day implementation plan
    - See [RECIPROCITY-SPEC.md](./RECIPROCITY-SPEC.md) for reciprocity implementation details
-   - See [COMMUNITY-SPECIFICATION.md](./COMMUNITY-SPECIFICATION.md) for Bunt community features
+   - See [PROFILE-FIELDS.md](./PROFILE-FIELDS.md) for community field definitions
 
 ---
 
