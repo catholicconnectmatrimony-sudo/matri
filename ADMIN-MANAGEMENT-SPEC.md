@@ -5,7 +5,7 @@
 - Provide easy-to-use admin interface for non-technical users
 - Enable efficient management of users, profiles, and platform operations
 - Support community-focused management for Tulunadu region
-- **Recommended Tech Stack (Phase 2)**: Extend the existing Next.js + shadcn/ui + TanStack Query/TanStack Table stack. Avoid React Admin to keep UI/UX and tooling consistent with the main app (no separate design system, easier Supabase integration, easier AI-driven development).
+- **Recommended Tech Stack (Phase 2)**: **Hybrid Approach** - React Admin + ra-supabase for standard CRUD (users, profiles, subscriptions, interests, payments) + shadcn/ui for custom features (reciprocity dashboard, photo moderation queue, community management). This balances speed (2-3 days for 80% of admin) with flexibility (custom features where needed).
 - Ensure platform safety and quality through effective moderation
 - Platform: CC Matrimony (matri.naveevo.com)
 - Tech Stack: Vercel Hobby + Supabase Free
