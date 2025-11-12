@@ -91,6 +91,7 @@ R2_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxx
 R2_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxx
 R2_BUCKET_NAME=cc-matrimony-photos
 R2_PUBLIC_URL=https://cdn.matri.naveevo.com  # Optional CDN URL
+STORAGE_PROVIDER=r2  # fallback to 'supabase' if R2 smoke test fails
 
 # Razorpay (Required Week 4)
 RAZORPAY_KEY_ID=rzp_test_xxxxx  # Use rzp_live_xxx for production
@@ -171,11 +172,11 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 
 - [ ] **Master Data**
   - [ ] Religion list (Christian, Hindu, Muslim, Other)
-  - [ ] Primary Community list per religion (unified field: "Caste" for Hindu, "Denomination" for Christian, "Sub-sect" for Muslim)
-    - [ ] Hindu: Bunt, Billava, Devadiga, Mogaveera, Iyengar, Nair, Vokkaliga, Brahmin, etc.
-    - [ ] Christian: Latin Catholic, Syrian Catholic, CSI, Marthoma, Pentecostal, Protestant, Orthodox, etc.
-    - [ ] Muslim: Sunni, Shia, Shafi, Hanafi, etc.
-  - [ ] Sub-community list per primary community (e.g., Bunt → Shetty, Hegde, Poojary, etc.)
+  - [ ] Primary Community list per religion (use arrays from `PROFILE-FIELDS.md`)
+    - [ ] Hindu: Bunt, Billava, Devadiga, Mogaveera, Iyengar, Nair, Vokkaliga, Brahmin, Other
+    - [ ] Christian: Latin Catholic, Syrian Catholic, CSI, Marthoma, Pentecostal, Protestant, Orthodox, Other
+    - [ ] Muslim: Sunni, Shia, Shafi, Hanafi, Other
+  - [ ] Sub-community list per primary community (e.g., `Bunt → Shetty, Hegde, Poojary, Nayak, Rai, Other` as defined in `PROFILE-FIELDS.md`)
   - [ ] Education qualifications list
   - [ ] Occupation categories list
   - [ ] Countries/states/cities list
@@ -213,6 +214,14 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 - [ ] Photos: Users can view photos of approved profiles
 - [ ] Interests: Users can view own interests
 - [ ] Messages: Users can view own messages (Phase 2)
+
+---
+
+## 🧰 Admin Operations (MVP Weeks 1-8)
+- **Profile approvals**: Auto-approved (`is_approved = true`). If a profile must be hidden, run `UPDATE profiles SET is_approved = false WHERE id = 'uuid';` in Supabase SQL.
+- **Photo moderation**: Photos auto-approved. Remove bad uploads with `DELETE FROM photos WHERE id = 'uuid';` and delete the file from R2 using the Cloudflare dashboard.
+- **User suspensions**: Suspend via Supabase Auth (`UPDATE auth.users SET banned_until = NOW() + INTERVAL '7 days' WHERE id = 'uuid';`). Volume expectation: <5 suspensions/week @ 100 users.
+- **Escalation rule**: If manual operations exceed 2 hours in any week, log the pain point and revisit the Phase 2 admin UI scope.
 
 ---
 

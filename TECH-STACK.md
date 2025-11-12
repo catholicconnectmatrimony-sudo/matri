@@ -76,6 +76,15 @@
 - **Display Fit**: CSS handles responsive sizing with `object-fit: cover` for cards, `object-fit: contain` for detail pages
 - **Moderation**: Manual admin approval (auto-approve by default)
 - **Watermarking**: Deferred to post-launch (client-side watermarking if needed)
+- **R2 Readiness**: End of Week 2 run a smoke test from a Node.js (not Edge) Vercel API route to upload/download a sample file. If Vercel runtime limits block R2, temporarily switch the `STORAGE_PROVIDER` env to `supabase` for Week 3 while the R2 fix is investigated.
+
+### 6.1 MVP Photo Upload Flow
+1. Signup (email/password) → email verification.
+2. Complete basic profile (name, age, gender, religion, primary community).
+3. Land on dashboard banner: "Upload a photo to view profiles." Browsing stays locked until photo upload succeeds.
+4. Upload photo (Week 3 slice) → reciprocity check re-runs and unlocks profile browsing immediately.
+
+> Rationale: keep signup friction low while enforcing reciprocity before users gain value.
 
 ## 7. Payments & Monetization
 | Capability | Service | Notes |
@@ -85,6 +94,8 @@
 | Future Gateways | **PhonePe/Paytm** | Add only if Razorpay has issues (deferred to Phase 2) |
 | Webhooks | **Vercel API Routes** | Payment verification and subscription management |
 | Invoicing | **PostgreSQL + PDF Generation** | Automated invoice generation |
+
+> **Implementation note (Week 6):** Razorpay webhooks must be idempotent. Verify the `x-razorpay-signature` before processing, upsert a `payment_events` record keyed by `razorpay_payment_id`, and respond `200` on duplicates. This prevents early/double notifications from activating subscriptions twice.
 
 ## 8. Communications
 - **Email**: Resend (transactional templates, interest alerts)

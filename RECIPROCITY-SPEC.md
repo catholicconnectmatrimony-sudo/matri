@@ -1,316 +1,105 @@
-# CC Matrimony Reciprocity Engine Specification
+# CC Matrimony Reciprocity Specification
 
-## 1. Purpose & Scope
-- MVP: Simple photo-gated reciprocity to keep scope lean and reinforce “share to see”.
-- Phase 2+: Full multi-bundle reciprocity as the differentiator (education/occupation/income/family, grace period, overrides).
+Goal: keep MVP enforcement extremely light so Cursor (or any AI co-pilot) can ship Week 5 in a single slice. All richer reciprocity behaviour is documented as Phase 2+ ideas only for future planning.
 
-## 2. Field Coverage
-| Bundle / Field | Reciprocity Required? | Notes |
-|----------------|-----------------------|-------|
-| Photos (MVP) | Yes (simple gate) | If user has ≥1 approved photo → can view others’ photos; else show “Upload a photo to view.” |
-| Education (Phase 2) | Yes | Deferred from MVP |
-| Occupation (Phase 2) | Yes | Deferred from MVP |
-| Income (Phase 2) | Yes | Deferred from MVP |
-| Family Details (Phase 2) | Yes (bundle) | Deferred from MVP |
-| Horoscope (Phase 2, optional) | Optional | Deferred from MVP |
-| Contact Details | No | Managed separately via plan limits and privacy controls. |
-| Basic Info & Bio | No | Always visible. |
+---
 
-## 3. Reciprocity Mode
+## 1. MVP Scope (Week 5 only)
+- Enforce **one rule**: viewers must have **at least one approved photo** to see other members' photos.
+- "Approved" = `status === 'approved'` in the `photos` table. MVP auto-approves every upload, so this check passes immediately on upload and fails instantly on delete.
+- Zero grace periods, bundles, overrides, or admin toggles.
+- No extra tables. Use the existing `photos` table and a single count query.
 
-### MVP (Simple Photo Gate)
-- Rule: If user has 0 approved photos → photos locked on other profiles with a single prompt.
-- Implementation:
-  1) Check viewer.approvedPhotoCount > 0
-  2) If true → allow photo visibility (subject to photo owner’s privacy)
-  3) If false → return locked state with “Upload a photo to view”
-- No grace period, no admin overrides, no count matching.
+| Bundle / Field | MVP Behaviour | Notes |
+|----------------|---------------|-------|
+| Photos | Locked until viewer has at least one approved photo | Prompt: "Upload a photo to view others." |
+| All other fields (education, occupation, income, family, horoscope, contact) | **Always visible** | Reciprocity deferred to Phase 2. |
 
-### Phase 2 (Full Engine - Single Gradual Mode)
-- Enforcement Behavior: Grace period applies, then strict visibility until reciprocity is met.
-- Relaxation Trigger: Mutual interest or premium upgrade unlocks additional fields.
-- Grace Period: 24 hours after first login and at least 5 profile views (whichever occurs later).
-- Admin Override: Available for support cases with audit logging.
+---
 
-## 4. Plan Structure
+## 2. Enforcement Flow
+1. User requests another member's photos.
+2. API counts the viewer's approved photos (`status = 'approved'`).
+3. `count > 0` -> return target photos, respecting owner privacy settings.
+4. `count === 0` -> return locked payload with CTA to upload.
+5. Deleting a photo triggers the same check on the next view; access is lost immediately.
 
-| Plan | Photo Slots | Reciprocity | Features |
-|------|-------------|-------------|----------|
-| Free | 1 profile + 1 album | Enforced | Basic search, 10 daily views |
-| Paid | 1 profile + 9 album + 3 family/group | Admin-configurable (default OFF) | All free + unlimited views, advanced search |
+There is purposely **no grace window** and **no moderation delay** in MVP. Everything happens deterministically per request.
 
-- **Reciprocity**: Enforced for Free by default. Paid tiers start with reciprocity disabled but can be enabled per plan from the admin dashboard.
-- **Admin Override**: Available for all plans in special cases (single member or entire tier).
+---
 
-### Photo Slot Details
-- **Profile Photo**: Required primary image shown in listings (1 slot all plans)
-- **Album Photos**: Showcase gallery (Free: 1, Paid: 9)
-- **Family / Group Photos**: Separate bucket for family or group pictures (Paid only: 3 slots)
-- **Formats & Size**: PNG, GIF, JPG, JPEG, WebP up to 15 MB per upload (client-side compression to <500KB before upload)
-- **Compression**: Client-side compression from Week 3; optional server-side Sharp pipeline converts to WebP (fallback JPEG 85) and can cap dimensions at 1920×1920 to save bandwidth.
-
-## 5. UX Flows
-### 5.1 Locked State Indicators
-- Show lock icon with tooltip: "Add your [field] to unlock others' [field]."
-- Include count reminders for photos: "Upload 2 more photos to view 2 more."
-
-### 5.2 Prompts & Alerts
-- **Attempted view without reciprocity** → "Share your occupation to view theirs." (CTA: Edit profile)
-- **Grace period expiring (1 hour left)** → "Reciprocity kicks in soon—complete your details to keep full access." (CTA: Open completion checklist)
-- **Post mutual interest (gradual mode)** → "You've matched! You now get limited access to hidden photos." (Informational toast)
-
-### 5.3 Privacy Dashboard
-- Display per-field status: Shared / Locked / Premium Only.
-- Provide quick edit links and reciprocity progress bar.
-- Photo deletions immediately re-check reciprocity; if approved photo count drops below matched users' photo count, viewing locks until restored. Restoring the minimum photo count re-opens access instantly.
-- When the grace period ends, show a banner toast (“Reciprocity now active”) and enforce restrictions on the next navigation to avoid jarring interrupts.
-- When another member has more photos than the viewer, expose photos in chronological upload order up to the viewer's contribution count.
-- Photo privacy tiers (e.g., family-only album) remain respected alongside reciprocity; conservative users can limit visibility without bypassing reciprocity checks.
-
-## 6. Admin Controls
-- Global reciprocity toggle (ON/OFF) with confirmation modal; OFF state logs admin ID + reason and bypasses enforcement for all users.
-- Toggle mode (Lenient / Strict / Gradual) globally or per plan.
-- Configure grace period duration (hours) and view threshold.
-- Override reciprocity for specific members (e.g., customer support cases) with audit log entry.
-- Trigger on-demand eligibility recalculation for a member via admin action when discrepancies are reported.
-- Admin dashboard module lists the 20 most recent global toggles and recalculations (timestamp, admin, note) for quick oversight.
-
-## 7. Technical Enforcement (Vercel + Supabase + Cloudflare R2)
-
-### **7.1 Database Schema**
-```sql
--- Reciprocity state tracking
-CREATE TABLE reciprocity_state (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  field_bundle VARCHAR(50) NOT NULL, -- photos, education, occupation, income, family
-  is_eligible BOOLEAN DEFAULT FALSE,
-  last_calculated TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, field_bundle)
-);
-
--- Reciprocity configuration
-CREATE TABLE reciprocity_config (
-  id SERIAL PRIMARY KEY,
-  plan_type VARCHAR(20) NOT NULL,
-  field_bundle VARCHAR(50) NOT NULL,
-  is_enabled BOOLEAN DEFAULT TRUE,
-  grace_period_days INTEGER DEFAULT 7,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### **7.2 Implementation Details**
-- **Database**: Supabase PostgreSQL with full control and 500MB limit
-- **Middleware**: Supabase Edge Functions check reciprocity before returning protected fields
-- **Real-time Updates**: Supabase triggers automatically recompute reciprocity state on profile updates
-- **Caching**: In-memory caching for reciprocity states to improve performance
-- **Background Jobs**: Vercel Cron Jobs (≤12) for daily reciprocity recalculation and cleanup
-- **Admin Tools**: Full admin panel with reciprocity management and override capabilities
-- **Media Storage**: Photos stored in Cloudflare R2 (private bucket). Access is via time-limited signed URLs generated by a Vercel API route. Database stores only `storage_key` for provider-agnostic access.
-
-### **7.3 MVP Photo Gate Check (API sketch)**
+## 3. Minimal API Sketch
 ```typescript
-// /api/profiles/[id]/photos (GET)
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const viewer = await requireAuth(req);
-  const approvedPhotos = await getApprovedPhotoCount(viewer.id);
-  if (approvedPhotos === 0) {
-    return NextResponse.json({ locked: true, message: 'Upload a photo to view' }, { status: 403 });
+// app/api/profiles/[profileId]/photos/route.ts
+export async function GET(_: Request, { params }: { params: { profileId: string } }) {
+  const viewer = await requireAuth(); // throws if not authenticated
+
+  const { count, error } = await supabase
+    .from('photos')
+    .select('id', { count: 'exact', head: true })
+    .eq('profile_id', viewer.id)
+    .eq('status', 'approved');
+
+  if (error) {
+    console.error('photo gate check failed', error);
+    throw new Error('Photo gate check failed');
   }
-  const photos = await getVisiblePhotos(params.id, viewer.id); // respects owner’s photo privacy
+
+  if (!count || count === 0) {
+    return NextResponse.json(
+      {
+        locked: true,
+        message: 'Upload at least one photo to view this profile.',
+      },
+      { status: 403 },
+    );
+  }
+
+  const photos = await getVisiblePhotos(params.profileId, viewer.id);
   return NextResponse.json({ locked: false, photos });
 }
 ```
 
-### **7.4 Phase 2 API Enforcement Example (Deferred)**
-
+Helper guard for client components:
 ```typescript
-export async function GET(request: Request) {
-  const viewerId = await getUserIdOrThrow(request);
-  const profileId = new URL(request.url).searchParams.get('id');
-  if (!profileId) {
-    return NextResponse.json({ error: 'Missing profile id' }, { status: 400 });
+export async function ensureCanViewPhotos(profileId: string) {
+  const response = await fetch(`/api/profiles/${profileId}/photos`);
+  if (response.status === 403) {
+    const payload = await response.json();
+    return payload; // { locked: true, message: string }
   }
-
-  const canView = await checkReciprocity({
-    viewerId,
-    profileId,
-    fieldBundle: 'education'
-  });
-
-  if (!canView) {
-    return NextResponse.json({
-      locked: true,
-      message: 'Add your education details to unlock theirs.'
-    }, { status: 403 });
-  }
-
-  const profile = await getProfileWithEducation(profileId);
-  return NextResponse.json(profile);
+  return response.json(); // { locked: false, photos: Photo[] }
 }
 ```
-
-## 8. Audit & Logging
-- Log every reciprocity denial with user ID, bundle, timestamp, and reason.
-- Admin overrides recorded with admin ID and justification.
-- On-demand reporting: admin can export recent denials via SQL/dashboard when investigating UX issues.
-
-## 9. Future Enhancements
-- A/B test prompt copy and timing to boost reciprocity completion.
-- Prototype partial reveals (blurred photos, summary income band) post-mutual interest.
 
 ---
 
-## 10. AI Implementation Guide (Week 5)
+## 4. UI Copy (MVP)
+- Locked card text: "Upload a photo to view others."
+- Button CTA: "Upload photo"
+- Success toast after upload: "You can now view profile photos."
+- This single message is reused on profile cards, modals, and detail pages for consistency.
 
-### **Implementation Order for AI Development:**
+---
 
-**Day 22-23: Database Setup**
-```sql
--- Step 1: Create reciprocity_state table
-CREATE TABLE reciprocity_state (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  field_bundle VARCHAR(50) NOT NULL,
-  is_eligible BOOLEAN DEFAULT FALSE,
-  last_calculated TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, field_bundle)
-);
+## 5. Testing Checklist
+- User with zero photos sees lock state everywhere photos would render.
+- Uploading a photo changes the state immediately (same session, refetch required if using React Query).
+- Deleting the only photo causes the next photo view attempt to lock again.
+- API logs (Sentry/PostHog) confirm when the gate denies access (event name `reciprocity_photo_gate_locked`).
 
--- Step 2: Create helper function
-CREATE OR REPLACE FUNCTION check_reciprocity(
-  viewer_id UUID,
-  target_id UUID,
-  bundle VARCHAR(50)
-) RETURNS BOOLEAN AS $$
-BEGIN
-  -- Check if viewer has shared the field
-  RETURN EXISTS (
-    SELECT 1 FROM reciprocity_state
-    WHERE user_id = viewer_id
-    AND field_bundle = bundle
-    AND is_eligible = true
-  );
-END;
-$$ LANGUAGE plpgsql;
-```
+---
 
-**Day 24: Build Calculation Functions**
-```typescript
-// lib/reciprocity/calculator.ts
-export function hasEducation(profile: Profile): boolean {
-  return !!(profile.education_level && profile.education_field);
-}
+## 6. Phase 2+ Backlog (Documentation Only)
+These items stay documented for future planning but **must not** creep into MVP implementation:
+- Multi-bundle reciprocity (education, occupation, income, family).
+- Grace periods, progressive unlocks, mutual-interest relaxations.
+- Admin toggles, overrides, dashboards, and cron recalculations.
+- Dedicated `reciprocity_state` / `reciprocity_config` tables.
+- Partial reveals (blurred photos, count matching), A/B prompt tests.
 
-export function hasOccupation(profile: Profile): boolean {
-  return !!(profile.occupation_sector && profile.job_title);
-}
+Keep this section as a reminder, not a requirement for Week 5.
 
-export function hasIncome(profile: Profile): boolean {
-  return !!profile.annual_income;
-}
+---
 
-export function hasFamilyDetails(profile: Profile): boolean {
-  return !!(
-    profile.father_name && 
-    profile.mother_name && 
-    profile.siblings_count !== null
-  );
-}
-
-export async function updateReciprocityState(userId: string) {
-  const profile = await getProfile(userId);
-  
-  await supabase.from('reciprocity_state').upsert([
-    { user_id: userId, field_bundle: 'education', is_eligible: hasEducation(profile) },
-    { user_id: userId, field_bundle: 'occupation', is_eligible: hasOccupation(profile) },
-    { user_id: userId, field_bundle: 'income', is_eligible: hasIncome(profile) },
-    { user_id: userId, field_bundle: 'family', is_eligible: hasFamilyDetails(profile) }
-  ]);
-}
-```
-
-**Day 25: Build UI Components**
-```typescript
-// components/profile/LockedField.tsx
-interface LockedFieldProps {
-  fieldName: string;
-  canView: boolean;
-  value?: string;
-  onUnlock: () => void;
-}
-
-export function LockedField({ fieldName, canView, value, onUnlock }: LockedFieldProps) {
-  if (canView) {
-    return <div className="text-gray-900">{value}</div>;
-  }
-  
-  return (
-    <div className="flex items-center gap-2 text-gray-400">
-      <LockIcon className="w-4 h-4" />
-      <span>Add your {fieldName} to unlock</span>
-      <Button onClick={onUnlock} variant="link">Edit Profile</Button>
-    </div>
-  );
-}
-```
-
-**Day 26-28: Grace Period + Testing**
-```typescript
-// lib/reciprocity/grace-period.ts
-export async function isInGracePeriod(userId: string): Promise<boolean> {
-  const user = await getUser(userId);
-  const hoursSinceCreation = (Date.now() - user.created_at.getTime()) / (1000 * 60 * 60);
-  
-  if (hoursSinceCreation < 24) return true;
-  
-  const viewCount = await getProfileViewCount(userId);
-  if (viewCount < 5) return true;
-  
-  return false;
-}
-
-export async function canViewField(
-  viewerId: string,
-  targetId: string,
-  fieldBundle: string
-): Promise<boolean> {
-  // Check grace period
-  if (await isInGracePeriod(viewerId)) return true;
-  
-  // Check premium status
-  const viewer = await getUser(viewerId);
-  if (viewer.plan_type !== 'free') return true;
-  
-  // Check reciprocity
-  const { data } = await supabase.rpc('check_reciprocity', {
-    viewer_id: viewerId,
-    target_id: targetId,
-    bundle: fieldBundle
-  });
-  
-  return data;
-}
-```
-
-### **Testing Checklist:**
-- [ ] User in grace period can view all fields
-- [ ] User after grace period sees locked fields
-- [ ] Adding education unlocks education on other profiles
-- [ ] Premium users bypass reciprocity
-- [ ] Admin can override reciprocity for specific users
-- [ ] Reciprocity state updates when profile is edited
-
-### **Common AI Mistakes to Avoid:**
-1. ❌ Don't implement all field bundles at once → Start with education only
-2. ❌ Don't build complex grace period logic first → Start with simple time-based check
-3. ❌ Don't create elaborate UI → Start with simple lock icon + tooltip
-4. ❌ Don't optimize prematurely → Make it work, then optimize
-
-### **Defer to Post-Launch:**
-- Photo count-based reciprocity (complex logic)
-- Horoscope reciprocity (optional feature)
-- Advanced grace period rules
-- A/B testing of prompts
-- Partial field reveals (blurred content)
+**Last updated:** November 12, 2025 (MVP simplification pass)
