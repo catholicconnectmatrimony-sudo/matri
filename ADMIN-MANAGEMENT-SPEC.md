@@ -1,16 +1,18 @@
-# CC Matrimony Admin Management Specification
+# CC Matrimony Admin Management Specification (Deferred to Phase 2)
 
 ## 1. Purpose & Scope
+- Status: Admin panel is not part of the MVP. This specification outlines the Phase 2+ Admin features.
 - Provide easy-to-use admin interface for non-technical users
 - Enable efficient management of users, profiles, and platform operations
 - Support community-focused management for Tulunadu region
+- **Recommended Tech Stack (Phase 2)**: Extend the existing Next.js + shadcn/ui + TanStack Query/TanStack Table stack. Avoid React Admin to keep UI/UX and tooling consistent with the main app (no separate design system, easier Supabase integration, easier AI-driven development).
 - Ensure platform safety and quality through effective moderation
 - Platform: CC Matrimony (matri.naveevo.com)
 - Tech Stack: Vercel Hobby + Supabase Free
 
 ## 2. Admin Roles & Permissions
 
-> **MVP Implementation**: Single Super Admin role only. Admin and Telecaller roles deferred to Week 6+ when hiring additional staff.
+> **MVP Implementation**: Admin panel deferred. All roles and tools in this document are Phase 2+ deliverables.
 
 ### **2.1 Super Admin (Platform Owner)** - IMPLEMENTED FOR MVP
 | Permission | Access Level | Description |

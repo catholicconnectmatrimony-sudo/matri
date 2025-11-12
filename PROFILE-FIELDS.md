@@ -4,6 +4,12 @@
 - Single source of truth for profile fields, validation, reciprocity mapping, and phasing to keep AI implementation simple.
 - Aligns with TECH-STACK (frontend-first, Zod Week 3+, Cloudflare R2 media, vertical slices).
 
+## 1.1 MVP Focus
+- **Primary Community**: Bunt (Hindu) - MVP launch focus
+- **Sub-communities**: Shetty, Hegde (P0), Poojary, Kotian (P1), Karkera (P2)
+- **Domain**: matri.naveevo.com
+- **Target Region**: Coastal Karnataka, Tulunadu Region
+
 ## 2. Condition Schema (standardized)
 Use a consistent condition format:
 ```json
@@ -36,7 +42,7 @@ Optional in W1-2 (move to W3+ as needed): complexion, body_type, physical_status
 
 Age rules: Female ≥18, Male ≥21 (derived from DOB).
 
-## 5. Primary & Religious (Christian slice) (Week 3+ for most)
+## 5. Primary & Religious Information (Week 3+ for most)
 
 | Field ID | Label | Type | Required | Validation/Options | Notes |
 |---|---|---|---|---|---|
@@ -46,21 +52,18 @@ Age rules: Female ≥18, Male ≥21 (derived from DOB).
 | physical_status | Physical Status | dropdown | no | enum | children on Differently Abled |
 | category_differently_abled | Category | multi_select_dropdown | cond | enum + "Other" → specify | |
 | describe_differently_abled | Describe | textarea | cond | max 500 | |
-| religion | Religion | dropdown | fixed | Christian | prefer deriving from route scope |
-| denomination | Denomination | dropdown | yes | list | |
-| diocese | Diocese | dropdown | yes | list + "Other" → diocese_name | |
-| parish_name_place | Parish Name and Place | textarea | no | | |
+| religion | Religion | dropdown | yes | Christian, Hindu, Muslim, Other | Drives community cascade |
+| primary_community | Primary Community | dropdown | yes | options_ref: primary_community_by_religion | Unified field: "Caste" (Hindu), "Denomination" (Christian), "Sub-sect" (Muslim). Filtered by `religion`; show "Other" |
+| sub_community | Sub-community | dropdown | cond | options_ref: sub_community_by_primary | Filtered by `primary_community`; show "Other" |
+| diocese | Diocese | dropdown | cond | Christian only | list + "Other" → diocese_name |
+| parish_name_place | Parish Name and Place | textarea | cond | Christian only | |
 
-### 5.1 Community-Specific (Tulunadu focus; phased)
+### 5.1 Additional Community Fields (Optional, Phase 1+)
 | Field ID | Label | Type | Phase | Notes |
 |---|---|---|---|---|
-| caste_sub_caste | Caste/Sub-caste | dropdown | P0 (Hindu slice) | Bunt, Billava, Devadiga, Mogaveera, etc. |
-| bunt_sub_community | Bunt Sub-communities | dropdown | P0 (Hindu slice) | Shetty, Hegde, Poojary, etc. |
 | native_place | Native Place | text | P1 | Birth place (differs from current location) |
 | mother_tongue | Mother Tongue | dropdown | P0 | Kannada, Tulu, Konkani, etc. (matching only) |
-| religion_scoped | Religion Selection | derived | P0 | From route/subdomain; not user-editable in slice |
-| community_selection | Community Selection | dropdown | P0 | Cascading by religion (where applicable) |
-| tulunadu_region | Tulunadu Region | dropdown | P0 | Coastal Karnataka |
+| tulunadu_region | Tulunadu Region | dropdown | P1 | Coastal Karnataka (for Tulunadu communities) |
 | local_festivals | Local Festivals | multi_select | P1 | Community-specific preferences |
 
 ## 6. Education & Professional (Week 3+; contributes to reciprocity)
@@ -157,12 +160,17 @@ Defer addresses (present/permanent) to later phase to reduce PII in MVP.
 - Week 3+: Zod + React Hook Form schemas (one per step), aligned to reciprocity bundles.
 
 ## 13. Access & Reciprocity Summary
-- Viewing other users’ education/occupation/income/family depends on having provided the corresponding bundle (after grace period), subject to plan rules.
-- Premium plans may bypass reciprocity per admin default.
+- MVP: Photo-gated only. Users must have ≥1 approved photo to view others’ photos (owner privacy still applies). Non-photo bundles do not gate visibility in MVP.
+- Phase 2: Education/occupation/income/family bundles may gate visibility; grace period and overrides considered.
 
 ## 14. Notes for AI Implementation
 - Build vertical slices page-by-page; start with Step 1 + minimal profile view.
 - Use TypeScript constants for lists in Week 1-2; replace with DB-backed lists in Week 3+.
+- **Cascading selects (unified structure)**: 
+  - Load `religion` options statically
+  - Derive `primary_community` options via `primaryCommunityByReligion[religion]` (label changes: "Caste" for Hindu, "Denomination" for Christian, "Sub-sect" for Muslim)
+  - Derive `sub_community` options via `subCommunityByPrimary[primary_community]`
+  - Surface an `other_*` text field when "Other" is selected
 - Keep addresses and extended PII for a later phase to accelerate MVP and reduce risk.
 
 ---
@@ -176,4 +184,49 @@ Defer addresses (present/permanent) to later phase to reduce PII in MVP.
 - Secondary mobile number (keep primary with OTP as source of truth).
 - Video uploads and any rich media beyond photos.
 - Government ID/document uploads for verification (post-MVP).
+
+## 16. Reference Lists (Unified Community Structure)
+```typescript
+export const religionOptions = ['Christian', 'Hindu', 'Muslim', 'Other']
+
+// Unified primary community field (Caste for Hindu, Denomination for Christian, Sub-sect for Muslim)
+export const primaryCommunityByReligion: Record<string, string[]> = {
+  Christian: ['Latin Catholic', 'Syrian Catholic', 'CSI', 'Marthoma', 'Pentecostal', 'Protestant', 'Orthodox', 'Other'],
+  Hindu: ['Bunt', 'Billava', 'Devadiga', 'Mogaveera', 'Iyengar', 'Nair', 'Vokkaliga', 'Brahmin', 'Other'],
+  Muslim: ['Sunni', 'Shia', 'Shafi', 'Hanafi', 'Other'],
+  Other: ['Other']
+}
+
+// Sub-communities based on primary community selection
+export const subCommunityByPrimary: Record<string, string[]> = {
+  // Hindu sub-communities
+  Bunt: ['Shetty', 'Hegde', 'Poojary', 'Nayak', 'Rai', 'Other'],
+  Billava: ['Other'],
+  Devadiga: ['Other'],
+  Mogaveera: ['Other'],
+  Iyengar: ['Other'],
+  Nair: ['Other'],
+  Vokkaliga: ['Other'],
+  Brahmin: ['Other'],
+  // Christian sub-communities (if any)
+  'Latin Catholic': ['Other'],
+  'Syrian Catholic': ['Other'],
+  CSI: ['Other'],
+  Marthoma: ['Other'],
+  // Muslim sub-communities (if any)
+  Sunni: ['Other'],
+  Shia: ['Other'],
+  Shafi: ['Other'],
+  Hanafi: ['Other'],
+  Other: ['Other']
+}
+
+// UI Label mapping (for display purposes)
+export const primaryCommunityLabel: Record<string, string> = {
+  Christian: 'Denomination',
+  Hindu: 'Caste',
+  Muslim: 'Sub-sect',
+  Other: 'Community'
+}
+```
 

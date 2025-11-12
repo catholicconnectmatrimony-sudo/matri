@@ -44,7 +44,7 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 For AI-driven development (Cursor/Windsurf), implement features in this order:
 
 **Week 1-2 (Foundation):**
-- Authentication (Email/Password, Google OAuth)
+- Authentication (Email/Password only - Google OAuth deferred to Phase 2)
 - Basic Profile Creation (name, age, gender, community only)
 - Profile View (read-only, no photos yet)
 
@@ -59,9 +59,9 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 - Razorpay Integration
 
 **Week 5 (Reciprocity):**
-- Reciprocity State Calculation
-- Field Locking UI (education, occupation, income)
-- Grace Period Logic
+- Reciprocity State Calculation (MVP: Simple photo gate only)
+- Photo visibility gating (users must have ≥1 approved photo to view others' photos)
+- Note: Grace period and field locking (education/occupation/income) deferred to Phase 2
 
 **Week 6 (Chat + Notifications):**
 - Supabase Realtime Chat
@@ -89,7 +89,7 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 - **Backend/Data:** Supabase Free (Postgres, Auth, Edge Functions) within quota limits.
 - **Storage:** Cloudflare R2 (private bucket, signed URLs via Vercel API; setup starts Week 3).
 - **APIs/Workers:** Vercel serverless routes and Supabase Edge Functions (no scheduled jobs).
-- **Payments & Comms:** Razorpay (primary), PhonePe (backup), Resend email, Fast2SMS SMS.
+- **Payments & Comms:** Razorpay (primary), Resend email. (SMS/OTP and extra gateways deferred)
 - **Observability:** Sentry (free tier) and Supabase logs.
 
 > Validation note: Use Zod + React Hook Form starting Week 3+ (initial UI uses lightweight validation).
@@ -101,11 +101,11 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Email Registration** | ✅ | P0 | Register with email address |
-| **Phone Registration** | ✅ | P0 | Register with phone number |
+| **Phone Registration** | 🔄 | P2 (Phase 2) | Register with phone number |
 | **Email Verification** | ✅ | P0 | Email verification link (24hr expiry) |
-| **Phone OTP Verification** | ✅ | P0 | 6-digit OTP (10min expiry) |
-| **Social Login - Google** | ✅ | P1 | Sign up/login with Google |
-| **Social Login - Facebook** | ✅ | P1 | Sign up/login with Facebook |
+| **Phone OTP Verification** | 🔄 | P2 (Phase 2) | Deferred from MVP |
+| **Social Login - Google** | 🔄 | P2 (Phase 2) | Deferred from MVP |
+| **Social Login - Facebook** | 🔄 | P2 (Phase 2) | Deferred from MVP |
 | **Password Reset** | ✅ | P0 | Email reset link flow |
 | **Password Strength Meter** | ✅ | P1 | Real-time validation with requirements display |
 | **Two-Factor Authentication** | ❌ | P2 | Not included (OTP is sufficient) |
@@ -279,8 +279,7 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **Reciprocity Engine** | ✅ | P1 | Field-level reciprocal visibility: see only what you share (photos, education, occupation, income, family, horoscope - all independent) |
-| **Reciprocity** | ✅ | P0 | Single Gradual mode with 24h/5 views grace period |
+| **Reciprocity (MVP)** | ✅ | P0 | Simple photo gate: users must upload ≥1 approved photo to view others’ photos (owner privacy still applies). Full bundles deferred to Phase 2. |
 | **Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan from dashboard |
 | **Premium Reciprocity Bypass** | ✅ | P0 | Default: all paid plans start with reciprocity OFF; admins can toggle ON per plan or per member |
 | **Contact Privacy Settings** | ✅ | P0 | All premium/Accepted/Mutual/Hidden |
@@ -310,15 +309,15 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ### **Reciprocity Engine - Field Rules**
 
-**Grace Period for New Users**: First 24 hours **and** first 5 profile views (whichever occurs later), then strict reciprocity applies.
+> **MVP Note**: Simple photo gate only - no grace period. Users must have ≥1 approved photo to view others' photos. Grace period and full field bundles deferred to Phase 2 (see [RECIPROCITY-SPEC.md](./RECIPROCITY-SPEC.md)).
 
 | Field | Your Contribution | What You Can See |
 |-------|-------------------|------------------|
-| **Photos** | Upload per-slot quota (Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group) | View matching photo slots on other profiles (subject to their photo privacy) |
-| **Education** | Provide your Education | View Education on other profiles |
-| **Occupation** | Provide your Occupation | View Occupation on other profiles |
-| **Income** | Provide your Income | View Income on other profiles |
-| **Family Details Bundle** | Provide Father + Mother + Siblings information | View complete family details on other profiles |
+| **Photos (MVP)** | Upload ≥1 approved photo | View others’ photos (subject to their photo privacy) |
+| **Education (Phase 2)** | Provide your Education | View Education on other profiles |
+| **Occupation (Phase 2)** | Provide your Occupation | View Occupation on other profiles |
+| **Income (Phase 2)** | Provide your Income | View Income on other profiles |
+| **Family Details (Phase 2)** | Provide Father + Mother + Siblings information | View complete family details on other profiles |
 | **Horoscope** | (Opt-in) Upload horoscope or provide Rashi/Nakshatra | View horoscope on other profiles |
 | **Bio/About Me** | Always visible | Always visible (no reciprocity) |
 | **Basic Info** | Always visible | Always visible (Name, Age, City, Religion - no reciprocity) |
@@ -450,7 +449,7 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
 | **Email Verification** | ✅ | P0 | Email verification link (24hr expiry) |
-| **Phone OTP Verification** | ✅ | P0 | 6-digit OTP (10min expiry) |
+| **Phone OTP Verification** | 🔄 | P2 (Phase 2) | Deferred from MVP - email/password only for MVP |
 | **Verified Badges** | ✅ | P0 | Email verified ✓, Phone verified ✓ |
 | **Manual Profile Verification** | ✅ | P1 | Review and approve verification badge |
 | **Document Verification Badges** | ❌ | P2 | Deferred: storage footprint too large for Supabase Free |
@@ -459,30 +458,32 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ## ⚙️ ADMIN & MANAGEMENT
 
+Note: Admin panel is deferred to Phase 2. Items below represent planned capabilities, not part of MVP.
+
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **Admin Authentication** | ✅ | P0 | Secure admin login (Super Admin role only) |
+| **Admin Authentication** | 🔄 | P2 (Phase 2) | Secure admin login (Super Admin role only) |
 | **Global Reciprocity Toggle** | ✅ | P0 | Master ON/OFF switch with audit trail and confirmation modal |
-| **Admin Dashboard** | ✅ | P0 | Overview: Total users, premium count (basic metrics only) |
-| **User Quick Search** | ✅ | P0 | Search by phone/email/name/profile ID |
-| **User Management** | ✅ | P0 | View profile, activity, subscription status |
-| **Change User Status** | ✅ | P0 | Activate, Suspend, Mark as Verified |
+| **Admin Dashboard** | 🔄 | P2 (Phase 2) | Overview: Total users, premium count (basic metrics only) |
+| **User Quick Search** | 🔄 | P2 (Phase 2) | Search by phone/email/name/profile ID |
+| **User Management** | 🔄 | P2 (Phase 2) | View profile, activity, subscription status |
+| **Change User Status** | 🔄 | P2 (Phase 2) | Activate, Suspend, Mark as Verified |
 | **Manual Premium Activation** | ✅ | P1 | Activate Silver Plus plan manually |
-| **Admin Role Management** | ✅ | P0 | Super Admin, Admin, Telecaller roles |
-| **Export User Data** | ✅ | P0 | JSON/CSV export (GDPR compliance) |
-| **Bulk Operations** | ✅ | P1 | Bulk email, status change, coupon assignment |
-| **Email Broadcast** | ✅ | P1 | Announcements to all/premium/segment |
-| **Internal Notes System** | ✅ | P1 | Admin notes on users (private, timestamped) |
-| **Call Logs System** | ✅ | P1 | Log telecaller calls with outcomes |
-| **Profile Rejection** | ✅ | P0 | Reject with reasons (blurry photo, fake) |
-| **Profanity Filter Toggle** | ✅ | P1 | Global ON/OFF + custom word blacklist |
-| **Admin Activity Logging** | ✅ | P0 | Track all admin actions with timestamps and IP addresses |
+| **Admin Role Management** | 🔄 | P2 (Phase 2) | Super Admin, Admin, Telecaller roles |
+| **Export User Data** | 🔄 | P2 (Phase 2) | JSON/CSV export (GDPR compliance) |
+| **Bulk Operations** | 🔄 | P2 (Phase 2) | Bulk email, status change, coupon assignment |
+| **Email Broadcast** | 🔄 | P2 (Phase 2) | Announcements to all/premium/segment |
+| **Internal Notes System** | 🔄 | P2 (Phase 2) | Admin notes on users (private, timestamped) |
+| **Call Logs System** | 🔄 | P2 (Phase 2) | Log telecaller calls with outcomes |
+| **Profile Rejection** | 🔄 | P2 (Phase 2) | Reject with reasons (blurry photo, fake) |
+| **Profanity Filter Toggle** | 🔄 | P2 (Phase 2) | Global ON/OFF + custom word blacklist |
+| **Admin Activity Logging** | 🔄 | P2 (Phase 2) | Track all admin actions with timestamps and IP addresses |
 | **User Impersonation** | ❌ | P2 | Not included (security risk) |
-| **Bulk User Operations** | ✅ | P1 | Bulk activate, suspend, delete, or modify user accounts |
+| **Bulk User Operations** | 🔄 | P2 (Phase 2) | Bulk activate, suspend, delete, or modify user accounts |
 | **Admin Dashboard Analytics** | ❌ | P2 | Deferred: Basic metrics sufficient for MVP |
-| **Red Flag Dashboard** | ✅ | P1 | Spot duplicate accounts, rapid interest spikes, and suspicious activity with audit trail |
+| **Red Flag Dashboard** | 🔄 | P2 (Phase 2) | Spot duplicate accounts, rapid interest spikes, and suspicious activity with audit trail |
 | **Admin Notification System** | ❌ | P2 | Deferred: Manual monitoring sufficient for MVP |
-| **Admin Role Permissions** | ✅ | P0 | Granular permissions for different admin roles |
+| **Admin Role Permissions** | 🔄 | P2 (Phase 2) | Granular permissions for different admin roles |
 
 ---
 
@@ -704,9 +705,9 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 ## 🗺️ IMPLEMENTATION ROADMAP
 
 ### **Phase 1: Core MVP (Weeks 1-4)**
-- ✅ Authentication & Security (Email/Phone registration, OTP verification)
+- ✅ Authentication & Security (Email/password only - Phone/OTP deferred to Phase 2)
 - ✅ Basic Profile Management (Essential fields, photo upload, approval workflow)
-- ✅ Reciprocity Engine (Core implementation with grace period)
+- ✅ Reciprocity Engine (MVP: Simple photo gate only - no grace period)
 - ✅ Basic Search & Discovery (Age, religion, community, location filters)
 - ✅ Interest & Matching System (Send/receive interests, mutual matches)
 - ✅ Payment Integration (Razorpay primary, PhonePe backup)
