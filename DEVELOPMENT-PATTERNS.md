@@ -460,39 +460,69 @@ export function ProfileForm() {
 
 ---
 
-## 🔒 RECIPROCITY PATTERN (Simple Photo Gate)
+## 📷 PHOTO REQUEST PATTERN
 
-### **Check Photo Reciprocity**
+### **Request Photo from Profile**
 ```typescript
-// lib/reciprocity/photo-gate.ts
+// lib/photo-requests/request-photo.ts
 import { createClient } from '@/lib/supabase/server'
 
-export async function canViewPhotos(viewerId: string): Promise<boolean> {
+export async function requestPhoto(requesterId: string, profileId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient()
   
-  // Check if viewer has at least 1 approved photo
-  const { data: photos, error } = await supabase
+  // Check if profile has any photos
+  const { data: photos, error: photosError } = await supabase
     .from('photos')
     .select('id')
-    .eq('profile_id', viewerId)
+    .eq('profile_id', profileId)
     .eq('is_approved', true)
     .limit(1)
 
-  if (error) {
-    console.error('Reciprocity check error:', error)
-    return false
+  if (photosError) {
+    console.error('Photo check error:', photosError)
+    return { success: false, error: 'Failed to check photos' }
   }
 
-  return (photos?.length ?? 0) > 0
+  // If profile already has photos, don't allow request
+  if (photos && photos.length > 0) {
+    return { success: false, error: 'Profile already has photos' }
+  }
+
+  // Check if request already exists
+  const { data: existingRequest } = await supabase
+    .from('photo_requests')
+    .select('id')
+    .eq('requester_id', requesterId)
+    .eq('profile_id', profileId)
+    .single()
+
+  if (existingRequest) {
+    return { success: false, error: 'Request already sent' }
+  }
+
+  // Create photo request
+  const { error } = await supabase
+    .from('photo_requests')
+    .insert({
+      requester_id: requesterId,
+      profile_id: profileId
+    })
+
+  if (error) {
+    console.error('Photo request error:', error)
+    return { success: false, error: 'Failed to send request' }
+  }
+
+  return { success: true }
 }
 ```
 
 ### **Use in API Route**
 ```typescript
-// app/api/profiles/[id]/route.ts
-export async function GET(
+// app/api/profiles/[profileId]/photos/request/route.ts
+export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { profileId: string } }
 ) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -501,23 +531,27 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check photo reciprocity
-  const canView = await canViewPhotos(user.id)
-  if (!canView) {
-    return NextResponse.json({
-      error: 'Upload a photo to view other profiles',
-      locked: true
-    }, { status: 403 })
-  }
-
-  // Fetch profile with photos
-  const { data: profile } = await supabase
+  // Get requester's profile ID
+  const { data: requesterProfile } = await supabase
     .from('profiles')
-    .select('*, photos(*)')
-    .eq('id', params.id)
+    .select('id')
+    .eq('user_id', user.id)
     .single()
 
-  return NextResponse.json({ profile })
+  if (!requesterProfile) {
+    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  }
+
+  const result = await requestPhoto(requesterProfile.id, params.profileId)
+  
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 400 })
+  }
+
+  // TODO: Send notification to profile owner
+  // await sendPhotoRequestNotification(params.profileId, requesterProfile.id)
+
+  return NextResponse.json({ success: true, message: 'Photo request sent' })
 }
 ```
 

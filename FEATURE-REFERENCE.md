@@ -9,7 +9,6 @@
 - [Profile Management](#-profile-management)
 - [Search & Discovery](#-search--discovery)
 - [Interest & Matching System](#-interest--matching-system)
-- [Communication & Chat](#-communication--chat)
 - [Photo & Video Management](#-photo--video-management)
 - [Privacy & Safety](#-privacy--safety)
 - [Premium Features & Payments](#-premium-features--payments)
@@ -40,60 +39,27 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 - **P1** - Important for user adoption (should-have)
 - **P2** - Nice-to-have for competitive advantage (could-have)
 
-### **AI Development Implementation Order:**
-For AI-driven development (Cursor/Windsurf), implement features in this order:
+### **Implementation Timeline**
+> **See [TECH-STACK.md](./TECH-STACK.md) section 17 for detailed day-by-day implementation roadmap (10 weeks).**
 
-**Week 1-2 (Foundation):**
-- Authentication (Email/Password only - Google OAuth deferred to Phase 2)
-- Basic Profile Creation (name, age, gender, community only)
-- Profile View (read-only, no photos yet)
-
-**Week 3 (Photos + Search):**
-- Photo Upload (client-side compression)
-- Basic Search (age, gender, community filters)
-- Profile Detail Page with Gallery
-
-**Week 4 (Interests + Payments):**
-- Interest System (send/receive/accept/decline)
-- Subscription Plans Display
-- Razorpay Integration
-
-**Week 5 (Reciprocity - 2 days + 5-day buffer):**
-- Day 22: Implement `canViewPhotos()` function + API route
-- Day 23: Add UI locked state with "Upload a photo" CTA
-- Day 24-28: **BUFFER** (use for Week 1-4 catch-up or polish)
-- Note: Grace period and field locking (education/occupation/income) deferred to Phase 2
-
-**Week 6 (Chat + Notifications):**
-- Supabase Realtime Chat
-- Email Notifications (Resend)
-- Basic notification preferences
-
-**Week 7 (Admin):**
-- Admin Authentication
-- User Management (list, search, suspend)
-- Profile Approval Queue
-
-**Week 8 (Polish):**
-- RLS Policies
-- Mobile Responsive Fixes
-- SEO + PWA Setup
+**High-Level Overview:**
+- **Weeks 1-2**: Foundation (Auth, Basic Profile)
+- **Week 3**: Photos + Search
+- **Week 4**: Interests + Payments
+- **Week 5**: Photo Request Feature
+- **Week 6**: Notifications
+- **Weeks 7-9**: Admin Panel
+- **Week 10**: Polish + Launch
 
 ### 🚀 MVP Snapshot
+- **Timeline:** 10 weeks (extended from 8 weeks to include admin panel)
 - **Planned Categories:** 18 across auth, profiles, search, matching, privacy, payments, and admin.
-- **Core References:** See [Reciprocity Engine](#-privacy--safety) details and [Reciprocity Spec](./RECIPROCITY-SPEC.md) for enforcement rules.
+- **Core References:** See [Photo Request Feature](#-photo--video-management) for requesting users to upload photos.
 - **Deferred Items:** Organized in [🚫 Features We Don't Have](#-features-we-dont-have-intentionally-excluded).
 - **Hosting Plan:** Runs entirely on Vercel Hobby + Supabase Free (limited storage, Vercel Cron ≤12 jobs).
 
-### 🧱 Tech Stack Snapshot
-- **Frontend:** Next.js 16.0.1 (React 19.2.0) on Vercel Hobby with Tailwind CSS 4.1.16 + Radix UI + shadcn/ui.
-- **Backend/Data:** Supabase Free (Postgres, Auth, Edge Functions) within quota limits.
-- **Storage:** Cloudflare R2 (private bucket, signed URLs via Vercel API; setup starts Week 3).
-- **APIs/Workers:** Vercel serverless routes and Supabase Edge Functions (no scheduled jobs).
-- **Payments & Comms:** Razorpay (primary), Resend email. (SMS/OTP and extra gateways deferred)
-- **Observability:** Sentry (free tier) and Supabase logs.
-
-> Validation note: Use Zod + React Hook Form starting Week 3+ (initial UI uses lightweight validation).
+### 🧱 Tech Stack
+> **See [TECH-STACK.md](./TECH-STACK.md) for complete technical specifications, architecture, database schema, API routes, and implementation details.**
 
 ---
 
@@ -146,10 +112,10 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 | **Profile Backup/Restore** | ❌ | P2 | Deferred: Complex implementation not needed for MVP |
 
 Profile fields specification
-- For the authoritative list of fields, validation, reciprocity mapping, and phasing, see PROFILE-FIELDS.md.
+- For the authoritative list of fields, validation, and phasing, see PROFILE-FIELDS.md.
 - Summary:
   - Week 1-2 (MVP core): minimal required set (name, gender, DOB→age, phone OTP, email, password, marital_status, created_by).
-  - Week 3+: education/occupation/income/family/photos wired, contribute to reciprocity; Cloudflare R2 for media (15MB, signed URLs).
+  - Week 3+: education/occupation/income/family/photos wired; Cloudinary for media (15MB, signed URLs).
   - Address-heavy PII deferred to later phase; preferences optional at creation.
 
 Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 breakdowns have been consolidated into PROFILE-FIELDS.md.
@@ -227,31 +193,6 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ---
 
-## 💬 COMMUNICATION & CHAT
-
-| Feature | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| **Real-time Chat** | 🔄 | P2 (Phase 3/4) | Supabase Realtime instant messaging (deferred) |
-| **Online/Last Seen Status** | 🔄 | P2 (Phase 3/4) | Show online & last active time (deferred) |
-| **Unread Count Badge** | 🔄 | P2 (Phase 3/4) | Real-time unread message count (deferred) |
-| **Chat History** | 🔄 | P2 (Phase 3/4) | Load older messages with infinite scroll (deferred) |
-| **Chat Access Control** | 🔄 | P2 (Phase 3/4) | Premium-only feature (deferred) |
-| **Message Character Limit** | 🔄 | P2 (Phase 3/4) | Max 500 chars per message (deferred) |
-| **Message Delivery Status** | 🔄 | P2 (Phase 3/4) | Sent ✓, Delivered ✓✓, Read ✓✓ (deferred) |
-| **Delete Message** | 🔄 | P3 | Delete for me (not for everyone) (deferred) |
-| **Typing Indicators** | 🔄 | P3 | "User is typing..." (deferred) |
-| **Read Receipts** | 🔄 | P2 (Phase 3/4) | Sent/delivered/read checkmarks (deferred) |
-| **Photo Sharing in Chat** | 🔄 | P2 (Phase 3/4) | Send images (max 5MB, watermarked) (deferred) |
-| **File Attachments** | ❌ | P2 | Removed from MVP - text + photo sharing only (PDF sharing deferred to Phase 2) |
-| **Report Abuse in Chat** | 🔄 | P2 (Phase 3/4) | Report with categories (deferred) |
-| **Block User from Chat** | 🔄 | P2 (Phase 3/4) | Block user, no further messages (deferred) |
-| **Chat Backup/Export** | ❌ | P2 | Deferred: Complex implementation for MVP |
-| **Chat Search** | ❌ | P2 | Deferred: Not essential for core functionality |
-| **Chat Encryption** | ❌ | P2 | Deferred: Complex security implementation |
-| **Chat Moderation Queue** | ❌ | P2 | Deferred: Manual moderation sufficient for MVP |
-| **Chat Analytics** | ❌ | P2 | Deferred: Analytics not critical for MVP |
-
----
 
 ## 📸 PHOTO & VIDEO MANAGEMENT
 
@@ -269,6 +210,8 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Photo Privacy Settings** | ✅ | P1 | Everyone/Premium/Sent/Accepted/Request |
 | **Per-Photo Privacy** | ✅ | P1 | Different levels per photo |
 | **Private Photos Album** | ✅ | P1 | Password/access controlled |
+| **Request Photo Feature** | ✅ | P0 | Show "Request Photo" button when profile has no photos |
+| **Photo Request Notifications** | ✅ | P0 | Notify users when someone requests them to upload photos |
 | **Photo Compression** | ✅ | P1 | Automatic compression to optimize storage and loading |
 | **Photo Metadata Stripping** | ✅ | P1 | Remove EXIF data for privacy protection |
 | **Photo Backup System** | ❌ | P2 | Deferred: Not needed with Supabase reliability |
@@ -280,9 +223,6 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 | Feature | Status | Priority | Description |
 |---------|--------|----------|-------------|
-| **Reciprocity (MVP)** | ✅ | P0 | Simple photo gate: users must upload ≥1 approved photo to view others’ photos (owner privacy still applies). Full bundles deferred to Phase 2. |
-| **Reciprocity Control** | ✅ | P0 | Admin sets reciprocity ON/OFF per plan from dashboard |
-| **Premium Reciprocity Bypass** | ✅ | P0 | Default: all paid plans start with reciprocity OFF; admins can toggle ON per plan or per member |
 | **Contact Privacy Settings** | ✅ | P0 | All premium/Accepted/Mutual/Hidden |
 | **Photo Privacy Settings** | ✅ | P0 | Everyone/Premium/Sent/Accepted/Request |
 | **Privacy Settings Dashboard** | ✅ | P1 | Central hub to manage all privacy preferences |
@@ -295,7 +235,7 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Unified Privacy Dashboard** | ✅ | P1 | Central hub for all privacy settings |
 | **Block Users** | ✅ | P0 | Block unwanted users |
 | **Report Abuse** | ✅ | P0 | Report with category (fake, harassment) |
-| **Basic Profanity Filter** | ✅ | P1 | Auto-filter bad words in bio/messages |
+| **Basic Profanity Filter** | ✅ | P1 | Auto-filter bad words in bio |
 | **Verification Badges System** | ✅ | P0 | Email verified ✓, Phone verified ✓ |
 | **Income Verification Badge** | ✅ | P1 | Salary slip/ITR review with badge display |
 | **Education Verification Badge** | ✅ | P1 | Degree certificate review with badge display |
@@ -304,26 +244,9 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Religion-Based Visibility** | ✅ | P1 | Default: same religion, opt-in: other religions (user-controlled) |
 | **Caste-Based Visibility** | ✅ | P1 | Default: same caste, option: other castes (user-controlled) |
 | **Community-Specific Search** | ✅ | P1 | Search results filtered by religion and caste |
-| **Reciprocity Tips Widget** | ✅ | P1 | Dashboard widget showing exactly what users need to share to unlock specific fields |
 | **Privacy Audit Trail** | ✅ | P1 | Track all privacy setting changes with timestamps |
 | **Privacy Compliance Dashboard** | ✅ | P1 | Admin view of privacy settings across all users |
 
-### **Reciprocity Engine - Field Rules**
-
-> **MVP Note**: Simple photo gate only - no grace period. Users must have ≥1 approved photo to view others' photos. Grace period and full field bundles deferred to Phase 2 (see [RECIPROCITY-SPEC.md](./RECIPROCITY-SPEC.md)).
-
-| Field | Your Contribution | What You Can See |
-|-------|-------------------|------------------|
-| **Photos (MVP)** | Upload ≥1 approved photo | View others’ photos (subject to their photo privacy) |
-| **Education (Phase 2)** | Provide your Education | View Education on other profiles |
-| **Occupation (Phase 2)** | Provide your Occupation | View Occupation on other profiles |
-| **Income (Phase 2)** | Provide your Income | View Income on other profiles |
-| **Family Details (Phase 2)** | Provide Father + Mother + Siblings information | View complete family details on other profiles |
-| **Horoscope** | (Opt-in) Upload horoscope or provide Rashi/Nakshatra | View horoscope on other profiles |
-| **Bio/About Me** | Always visible | Always visible (no reciprocity) |
-| **Basic Info** | Always visible | Always visible (Name, Age, City, Religion - no reciprocity) |
-
-> Detailed mode behavior and UX copy live in the [Reciprocity Engine Specification](./RECIPROCITY-SPEC.md).
 
 ---
 
@@ -342,11 +265,6 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Contact Limit Tracking** | ✅ | P1 | Dashboard showing total + daily usage |
 | **Premium Expiry Alerts** | ✅ | P1 | 7d, 3d, 1d reminders |
 
-### **Reciprocity by Plan (Admin Editable Defaults)**
-| Plan | Default Reciprocity | Notes |
-|------|---------------------|-------|
-| Free | ON | Full reciprocity rules apply |
-| Paid (all tiers) | OFF | Bypasses reciprocity until admin enables for a tier |
 
 ### **Payment Gateways**
 | Feature | Status | Priority | Description |
@@ -457,32 +375,15 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ## ⚙️ ADMIN & MANAGEMENT
 
-Note: Admin panel is deferred to Phase 2. Items below represent planned capabilities, not part of MVP.
+> **Complete admin panel specifications, MVP features (Weeks 7-9), and future phases (Phase 2+) are documented in [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md).**
 
-| Feature | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| **Admin Authentication** | 🔄 | P2 (Phase 2) | Secure admin login (Super Admin role only) |
-| **Global Reciprocity Toggle** | ✅ | P0 | Master ON/OFF switch with audit trail and confirmation modal |
-| **Admin Dashboard** | 🔄 | P2 (Phase 2) | Overview: Total users, premium count (basic metrics only) |
-| **User Quick Search** | 🔄 | P2 (Phase 2) | Search by phone/email/name/profile ID |
-| **User Management** | 🔄 | P2 (Phase 2) | View profile, activity, subscription status |
-| **Change User Status** | 🔄 | P2 (Phase 2) | Activate, Suspend, Mark as Verified |
-| **Manual Premium Activation** | ✅ | P1 | Activate Silver Plus plan manually |
-| **Admin Role Management** | 🔄 | P2 (Phase 2) | Super Admin, Admin, Telecaller roles |
-| **Export User Data** | 🔄 | P2 (Phase 2) | JSON/CSV export (GDPR compliance) |
-| **Bulk Operations** | 🔄 | P2 (Phase 2) | Bulk email, status change, coupon assignment |
-| **Email Broadcast** | 🔄 | P2 (Phase 2) | Announcements to all/premium/segment |
-| **Internal Notes System** | 🔄 | P2 (Phase 2) | Admin notes on users (private, timestamped) |
-| **Call Logs System** | 🔄 | P2 (Phase 2) | Log telecaller calls with outcomes |
-| **Profile Rejection** | 🔄 | P2 (Phase 2) | Reject with reasons (blurry photo, fake) |
-| **Profanity Filter Toggle** | 🔄 | P2 (Phase 2) | Global ON/OFF + custom word blacklist |
-| **Admin Activity Logging** | 🔄 | P2 (Phase 2) | Track all admin actions with timestamps and IP addresses |
-| **User Impersonation** | ❌ | P2 | Not included (security risk) |
-| **Bulk User Operations** | 🔄 | P2 (Phase 2) | Bulk activate, suspend, delete, or modify user accounts |
-| **Admin Dashboard Analytics** | ❌ | P2 | Deferred: Basic metrics sufficient for MVP |
-| **Red Flag Dashboard** | 🔄 | P2 (Phase 2) | Spot duplicate accounts, rapid interest spikes, and suspicious activity with audit trail |
-| **Admin Notification System** | ❌ | P2 | Deferred: Manual monitoring sufficient for MVP |
-| **Admin Role Permissions** | 🔄 | P2 (Phase 2) | Granular permissions for different admin roles |
+**Quick Summary:**
+- **MVP/Phase 1 (Weeks 7-9)**: Admin Authentication, User Management, Profile Approval, Photo Moderation, Payment Management, Analytics Dashboard, System Settings, Content Management
+- **Phase 2**: Advanced Roles, Enhanced Bulk Operations, Enhanced Analytics, Email/SMS Broadcasting, Enhanced Export Capabilities, Enhanced Audit Trail, Coupon Code Management
+- **Phase 3**: Red Flag Dashboard, Churn Signals, Advanced Reporting
+- **Phase 4**: Automated Workflows, Advanced Permissions
+- **Phase 5**: Multi-tenant Support, Advanced Integration
+- **Phase 6+**: Partner & Agency Features (deferred)
 
 ---
 
@@ -510,8 +411,7 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 | **Not Interested/Hide** | ✅ | P0 | Mark profiles as not interested |
 | **Accessibility Features** | ✅ | P0 | Screen reader, keyboard nav, ARIA labels |
 | **Relationship Status Update** | ✅ | P1 | Users can mark engaged/married to pause visibility |
-| **Match Closure Flow** | ✅ | P1 | “Found a match” wizard: choose status (Dating/Engaged/Married), auto-hide profile, capture testimonial |
-| **Reciprocity Tips Card** | ✅ | P1 | Dashboard panel with contextual prompts (e.g., "Upload 2 more photos to unlock 2 more") |
+| **Match Closure Flow** | ✅ | P1 | "Found a match" wizard: choose status (Dating/Engaged/Married), auto-hide profile, capture testimonial |
 | **User Onboarding Flow** | ✅ | P0 | Guided tour for new users with feature highlights |
 | **Help & Support Center** | ✅ | P1 | FAQ, video tutorials, and contact support |
 | **WhatsApp Support Chat** | ❌ | P2 | Removed from MVP - email + phone support sufficient |
@@ -559,15 +459,8 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 ### Communications & Engagement
 | Feature | Status | Our Reason |
 |---------|--------|-----------|
-| **Chat Templates** | ❌ | Impersonal, reduces authenticity of communication |
-| **Emoji in Chat** | ❌ | Too casual for matrimony context, maintains formality |
-| **Voice Messages** | ❌ | Too casual for matrimony context |
+| **Chat System** | ❌ | Removed - users connect directly via "View Contact" option |
 | **Daily Match Digest** | ❌ | Scheduled marketing email deferred |
-| **Chat Backup/Export** | ❌ | Complex implementation for MVP |
-| **Chat Search** | ❌ | Not essential for core functionality |
-| **Chat Encryption** | ❌ | Complex security implementation |
-| **Chat Moderation Queue** | ❌ | Manual moderation sufficient for MVP |
-| **Chat Analytics** | ❌ | Analytics not critical for MVP |
 
 ### UX Experiments & Gamification
 | Feature | Status | Our Reason |
@@ -606,7 +499,6 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 | **Profile Backup/Restore** | ❌ | Database backups handle this, unnecessary complexity |
 | **Search History** | ❌ | Not essential for core experience, adds complexity |
 | **Saved Searches** | ❌ | Advanced feature deferred to Phase 2 |
-| **Chat File Attachments (PDFs)** | ❌ | Text + photo sharing sufficient for MVP, defer document sharing |
 | **Match Closure Testimonial Wizard** | ❌ | Simplified to status update only, manual testimonial collection via email |
 
 ### Media & Verification
@@ -657,7 +549,11 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 ### Partner Programs
 | Feature | Status | Our Reason |
 |---------|--------|-----------|
-| **Partner & Agency Portal** | ❌ | Requires dedicated infrastructure (Supabase Pro scheduled jobs, higher quotas) |
+| **Partner & Agency Management (Basic)** | 🔄 Phase 2 | Deferred from MVP - not required for initial launch |
+| **Partner Portal** | 🔄 Phase 2 | Separate partner login and dashboard - requires additional infrastructure |
+| **Partner Commission System** | 🔄 Phase 2 | Commission tracking and payment system |
+| **Partner Marketplace** | 🔄 Phase 3 | Service listings and booking system |
+| **Partner Network** | 🔄 Phase 5 | Full partner ecosystem with directory and collaboration |
 
 ### Mobile & Platform Extensions
 | Feature | Status | Our Reason |
@@ -703,38 +599,11 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 
 ## 🗺️ IMPLEMENTATION ROADMAP
 
-### **Phase 1: Core MVP (Weeks 1-4)**
-- ✅ Authentication & Security (Email/password only - Phone/OTP deferred to Phase 2)
-- ✅ Basic Profile Management (Essential fields, photo upload, approval workflow)
-- ✅ Reciprocity Engine (MVP: Simple photo gate only - no grace period)
-- ✅ Basic Search & Discovery (Age, religion, community, location filters)
-- ✅ Interest & Matching System (Send/receive interests, mutual matches)
-- ✅ Payment Integration (Razorpay primary, PhonePe backup)
-- ✅ Admin Panel (User management, profile approval, basic analytics)
+> **See [TECH-STACK.md](./TECH-STACK.md) section 17 for detailed implementation roadmap with day-by-day breakdown.**
 
-### **Phase 2: Enhanced Features (Weeks 5-8)**
-- 🔄 Advanced Search Filters (Height, education, income, occupation)
-- 🔄 Communication System (Real-time chat, photo sharing, file attachments)
-- 🔄 Privacy & Safety (Advanced privacy controls, reporting system)
-- 🔄 Premium Features (Tiered plans, contact viewing, interest limits)
-- 🔄 Admin Tools (Bulk operations, basic analytics, user management)
+**MVP (Weeks 1-10):** Authentication, Profiles, Photos, Search, Interests, Payments, Photo Requests, Notifications, Admin Panel
 
-### **Phase 3: Optimization & Growth (Weeks 9-12)**
-- 🔄 SEO & Community Pages (Religion-specific portals, success stories)
-- 🔄 Profile View Analytics (Track views, sources, engagement metrics)
-- 🔄 Basic Analytics (User engagement, conversion tracking)
-- 🔄 Mobile Optimization (Responsive design, PWA features)
-- 🔄 Partnership Framework (Wedding planners, photographers, corporate partnerships)
-- 🔄 Enhanced Admin Features (Improved reporting, basic automation)
-
-### **Phase 4: Scale & Expansion (Months 4-6)**
-- 🔄 Advanced Matching Algorithm (ML-based compatibility scoring)
-- 🔄 Profile Verification System (Multi-tier verification badges)
-- 🔄 Advanced Privacy Features (Granular controls, audit trails)
-- 🔄 Revenue Optimization (Profile boost, premium features, referral system)
-- 🔄 Infrastructure Upgrade (Supabase Pro, Vercel Pro, advanced monitoring)
-- 🔄 Advanced Analytics (Comprehensive dashboards, automated reporting)
-- 🔄 Advanced Admin Features (Automated notifications, advanced analytics)
+**Post-MVP:** Advanced Search, Enhanced Privacy, Premium Features, SEO, Analytics, Mobile Apps
 
 ---
 
@@ -790,42 +659,7 @@ Note: Admin panel is deferred to Phase 2. Items below represent planned capabili
 
 ## 🤖 AI DEVELOPMENT GUIDELINES
 
-### **Critical Success Factors for AI-Driven Development:**
-
-1. **Build Incrementally**
-   - Complete one feature fully before moving to next
-   - Test after each checkpoint (see week-by-week plan above)
-   - Commit working code frequently with descriptive messages
-
-2. **Follow the Schema Phases**
-   - Week 1-2: Core tables only (users, profiles, photos)
-   - Week 3-5: Feature tables (interests, subscriptions, reciprocity)
-   - Week 6-7: Communication tables (messages)
-   - Week 8: Add RLS policies after features work
-
-3. **Use Type-First Development**
-   - Generate database types before building components
-   - Use Zod for form validation
-   - Leverage TypeScript strict mode
-
-4. **Avoid Common AI Pitfalls**
-   - ❌ Don't generate entire pages in one prompt
-   - ❌ Don't implement all API routes at once
-   - ❌ Don't add reciprocity on Day 1
-   - ❌ Don't build complex admin panel early
-   - ✅ Build layout → components → logic separately
-   - ✅ Create one CRUD endpoint, test, then replicate
-   - ✅ Make it work first, optimize later
-
-5. **Testing Strategy**
-   - Focus on integration tests over unit tests
-   - Test critical user flows: register → login → create profile → search → send interest
-   - Use Supabase service role for testing before adding RLS
-
-6. **Reference Documents**
-   - See [TECH-STACK.md](./TECH-STACK.md) for detailed day-by-day implementation plan
-   - See [RECIPROCITY-SPEC.md](./RECIPROCITY-SPEC.md) for reciprocity implementation details
-   - See [PROFILE-FIELDS.md](./PROFILE-FIELDS.md) for community field definitions
+> **See [TECH-STACK.md](./TECH-STACK.md) section 23 for complete AI development best practices, incremental development strategies, and common pitfalls to avoid.**
 
 ---
 

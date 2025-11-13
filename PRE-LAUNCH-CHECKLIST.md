@@ -1,6 +1,6 @@
 # CC Matrimony - Pre-Launch Checklist & Manual Operations Guide
 
-> **Purpose**: Ensure all infrastructure, accounts, and processes are ready before Day 1 of development. This document also serves as a reference for manual operations during MVP (since admin panel is deferred to Phase 2).
+> **Purpose**: Ensure all infrastructure, accounts, and processes are ready before Day 1 of development. This document also serves as a reference for manual operations during MVP (admin panel will be built in Weeks 7-9).
 
 ---
 
@@ -191,7 +191,7 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 - [ ] **Interest Received Email**
   - [ ] Template designed
   - [ ] Content written
-  - [ ] Variables: `{{sender_name}}`, `{{profile_link}}`, `{{message}}`
+  - [ ] Variables: `{{sender_name}}`, `{{profile_link}}`
 
 - [ ] **Interest Accepted Email**
   - [ ] Template designed
@@ -238,7 +238,6 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
   - [ ] `subscriptions` table
   - [ ] `payment_events` table (for Week 6 webhook idempotency)
   - [ ] `verification_tokens` table (only if using Resend workaround for email)
-  - [ ] `messages` table (for Phase 2 chat)
   - [ ] `communities` table
   - [ ] `sub_communities` table
 
@@ -322,17 +321,9 @@ CREATE TABLE verification_tokens (
 - [ ] Profiles: Users can edit own profile
 - [ ] Photos: Users can view photos of approved profiles
 - [ ] Interests: Users can view own interests
-- [ ] Messages: Users can view own messages (Phase 2)
 
 ---
 
-## 🧰 Admin Operations (MVP Weeks 1-8)
-- **Profile approvals**: Auto-approved (`is_approved = true`). If a profile must be hidden, run `UPDATE profiles SET is_approved = false WHERE id = 'uuid';` in Supabase SQL.
-- **Photo moderation**: Photos auto-approved. Remove bad uploads with `DELETE FROM photos WHERE id = 'uuid';` and delete the image from Cloudinary using the Cloudinary dashboard or Admin API.
-- **User suspensions**: Suspend via Supabase Auth (`UPDATE auth.users SET banned_until = NOW() + INTERVAL '7 days' WHERE id = 'uuid';`). Volume expectation: <5 suspensions/week @ 100 users.
-- **Escalation rule**: If manual operations exceed 2 hours in any week, log the pain point and revisit the Phase 2 admin UI scope.
-
----
 
 ## 🧪 TESTING CHECKLIST
 
@@ -345,23 +336,19 @@ CREATE TABLE verification_tokens (
 - [ ] Profile completeness calculates correctly
 - [ ] Cannot browse without profile
 
-### **Week 3: Photos**
+### **Week 3: Photos & Search**
 
 - [ ] Can upload profile photo
 - [ ] Photo uploads to Cloudinary (Cloudinary handles optimization automatically)
 - [ ] Photo displays correctly
 - [ ] Can edit profile
 - [ ] Photo gallery works
-
-### **Week 4: Search**
-
 - [ ] Can search by age, gender, community
 - [ ] Search results paginate correctly
 - [ ] Can view other profiles
 - [ ] Profile view tracking works
-- [ ] Cannot browse without photo (reciprocity)
 
-### **Week 5: Interests**
+### **Week 4: Interests & Payments**
 
 - [ ] Can send interest
 - [ ] Daily limit enforced (3 for free)
@@ -369,9 +356,6 @@ CREATE TABLE verification_tokens (
 - [ ] Can accept/decline interest
 - [ ] Mutual match alert works
 - [ ] Interest counter resets daily
-
-### **Week 6: Payments**
-
 - [ ] Pricing page displays correctly
 - [ ] Can initiate Razorpay checkout
 - [ ] Payment webhook receives events
@@ -380,17 +364,52 @@ CREATE TABLE verification_tokens (
 - [ ] Limits increase for premium users
 - [ ] Test payment with Razorpay test card
 
-### **Week 7: Notifications & Polish**
+### **Week 5: Photo Request Feature**
+
+- [ ] Photo request API routes work
+- [ ] "Request Photo" button shows for profiles without photos
+- [ ] Can send photo request
+- [ ] Duplicate requests prevented
+- [ ] Notification sent to profile owner
+
+### **Week 6: Notifications**
 
 - [ ] Welcome email sends on registration
 - [ ] Interest received email sends
 - [ ] Interest accepted email sends
 - [ ] Password reset email works
 - [ ] In-app notifications display
+
+### **Week 7-9: Admin Panel**
+
+> **See [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md) section 4 for complete implementation checklist and section 2 for feature details.**
+
+**Week 7: Admin Foundation**
+- [ ] Admin login page works
+- [ ] Admin authentication protects routes
+- [ ] User management (list, search, filters, actions) works
+
+**Week 8: Profile & Payments**
+- [ ] Profile approval queue and workflow work
+- [ ] Photo moderation queue and actions work
+- [ ] Payment management and refund processing work
+
+**Week 9: Analytics & Settings**
+- [ ] Analytics dashboard displays all statistics
+- [ ] System settings and feature toggles work
+- [ ] Content management pages work
+
+### **Week 10: Polish & Launch**
+
+- [ ] RLS policies implemented and tested
 - [ ] Mobile responsive on all pages
-- [ ] PWA installable
-- [ ] SEO meta tags present
-- [ ] Sitemap generates
+- [ ] PWA manifest works
+- [ ] SEO meta tags added
+- [ ] Sitemap generated
+- [ ] robots.txt configured
+- [ ] All tests pass
+- [ ] Staging deployment successful
+- [ ] Smoke tests pass
 
 ### **Pre-Launch Smoke Tests**
 
@@ -403,70 +422,15 @@ CREATE TABLE verification_tokens (
 
 ---
 
-## 🔧 MANUAL OPERATIONS (MVP - No Admin Panel)
+## 🔧 Emergency Manual Operations (Fallback Only)
 
-Since admin panel is deferred to Phase 2, owner will use Supabase dashboard for manual operations.
+> **⚠️ Use Only When Admin Panel is Unavailable**  
+> Admin panel is available from Week 9 onwards. For normal operations, use the admin panel (see [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md)).  
+> These SQL queries are for **emergency situations only** when the admin panel is down or inaccessible.
 
-### **Daily Operations**
+### **Critical Emergency Operations**
 
-#### **Morning Check (5 minutes)**
-```sql
--- New users today
-SELECT 
-  p.profile_id,
-  p.full_name,
-  p.email,
-  p.community,
-  p.created_at
-FROM profiles p
-WHERE DATE(p.created_at) = CURRENT_DATE
-ORDER BY p.created_at DESC;
-
--- New payments today
-SELECT 
-  p.full_name,
-  s.plan_type,
-  s.amount,
-  s.status,
-  s.created_at
-FROM subscriptions s
-JOIN profiles p ON s.user_id = p.user_id
-WHERE DATE(s.created_at) = CURRENT_DATE
-ORDER BY s.created_at DESC;
-```
-
-#### **Weekly Stats (Monday Morning)**
-```sql
--- Week overview
-SELECT 
-  COUNT(*) FILTER (WHERE created_at >= date_trunc('week', CURRENT_DATE)) as new_users_this_week,
-  COUNT(*) FILTER (WHERE last_active >= date_trunc('week', CURRENT_DATE)) as active_users_this_week,
-  (SELECT COUNT(*) FROM subscriptions 
-   WHERE created_at >= date_trunc('week', CURRENT_DATE)) as new_subscriptions_this_week,
-  (SELECT SUM(amount) FROM subscriptions 
-   WHERE created_at >= date_trunc('week', CURRENT_DATE) 
-   AND status = 'active') as revenue_this_week
-FROM profiles;
-```
-
-### **User Support Operations**
-
-#### **Find User**
-```sql
--- Search by email
-SELECT * FROM profiles WHERE email = 'user@example.com';
-
--- Search by phone
-SELECT * FROM profiles WHERE phone = '+91XXXXXXXXXX';
-
--- Search by profile ID
-SELECT * FROM profiles WHERE profile_id = 'CCM001234';
-
--- Search by name
-SELECT * FROM profiles WHERE full_name ILIKE '%John%';
-```
-
-#### **Suspend User**
+#### **1. Suspend User (Urgent Safety Issue)**
 ```sql
 -- Suspend user account (7 days)
 UPDATE auth.users 
@@ -484,68 +448,7 @@ FROM auth.users
 WHERE email = 'user@example.com';
 ```
 
-#### **Activate User**
-```sql
--- Remove suspension
-UPDATE auth.users 
-SET banned_until = NULL
-WHERE email = 'user@example.com';
-```
-
-#### **Manually Activate Premium**
-```sql
--- Activate Silver plan manually
-INSERT INTO subscriptions (
-  user_id, 
-  plan_type, 
-  status, 
-  amount, 
-  start_date, 
-  end_date,
-  payment_id
-)
-VALUES (
-  (SELECT user_id FROM profiles WHERE email = 'user@example.com'),
-  'silver',
-  'active',
-  399,
-  NOW(),
-  NOW() + INTERVAL '1 month',
-  'manual-activation-' || NOW()::text
-);
-```
-
-#### **Refund Subscription**
-```sql
--- Cancel and refund
-UPDATE subscriptions 
-SET 
-  status = 'cancelled',
-  end_date = NOW()
-WHERE user_id = (SELECT user_id FROM profiles WHERE email = 'user@example.com')
-AND status = 'active';
-
--- Note: Process actual refund via Razorpay dashboard
-```
-
-### **Content Moderation**
-
-#### **Review Reported Profiles**
-```sql
--- Find profiles with reports (if reports table exists)
-SELECT 
-  p.profile_id,
-  p.full_name,
-  p.email,
-  COUNT(r.id) as report_count
-FROM profiles p
-LEFT JOIN reports r ON p.id = r.reported_profile_id
-GROUP BY p.id, p.profile_id, p.full_name, p.email
-HAVING COUNT(r.id) > 0
-ORDER BY report_count DESC;
-```
-
-#### **Deactivate Profile**
+#### **2. Hide Profile (Urgent Moderation)**
 ```sql
 -- Hide profile from search
 UPDATE profiles 
@@ -558,23 +461,18 @@ SET is_approved = true
 WHERE profile_id = 'CCM001234';
 ```
 
-#### **Delete Photo**
+#### **3. Remove Suspicious Photo (Urgent)**
 ```sql
--- Find user's photos
-SELECT * FROM photos 
-WHERE profile_id = (SELECT id FROM profiles WHERE email = 'user@example.com');
-
--- Delete specific photo
-DELETE FROM photos 
-WHERE id = 'photo-uuid-here';
+-- Delete photo from database
+DELETE FROM photos WHERE id = 'photo-uuid-here';
 -- Note: Also delete from Cloudinary manually via dashboard or Admin API
 ```
 
-### **Data Export (GDPR/DPDPA)**
+### **Legal Compliance (GDPR/DPDPA)**
 
-#### **Export User Data**
+#### **4. Export User Data (Legal Request)**
 ```sql
--- Export all user data as JSON
+-- Export all user data as JSON (use admin panel when available)
 SELECT 
   json_build_object(
     'profile', row_to_json(p.*),
@@ -587,19 +485,7 @@ FROM profiles p
 WHERE p.email = 'user@example.com';
 ```
 
-#### **Delete User Account (Soft Delete)**
-```sql
--- Soft delete profile
-UPDATE profiles 
-SET 
-  is_active = false,
-  deleted_at = NOW()
-WHERE email = 'user@example.com';
-
--- Hard delete (after 30-day grace period)
--- WARNING: This is permanent!
-DELETE FROM profiles WHERE email = 'user@example.com' AND deleted_at < NOW() - INTERVAL '30 days';
-```
+> **Note**: All other operations (user search, profile management, payment processing, analytics) should be done via the admin panel. These SQL queries are emergency fallbacks only.
 
 ---
 

@@ -1,7 +1,7 @@
 # Profile Fields Specification
 
 ## 1. Purpose
-- Single source of truth for profile fields, validation, reciprocity mapping, and phasing to keep AI implementation simple.
+- Single source of truth for profile fields, validation, and phasing to keep AI implementation simple.
 - Aligns with TECH-STACK (frontend-first, Zod Week 3+, Cloudflare R2 media, vertical slices).
 - All communities are treated equally - community pages are auto-generated from database.
 
@@ -14,7 +14,7 @@ Examples:
 - { "field": "marital_status", "op": "ne", "value": "Unmarried" }
 - { "field": "native_country", "op": "eq", "value": "India" }
 
-## 3. Reciprocity Bundles
+## 3. Field Groups
 - education: educational_qualifications, education_in_detail
 - occupation: occupation_category, occupation_in_detail, employment_category
 - income: annual_income
@@ -61,7 +61,7 @@ Age rules: Female ≥18, Male ≥21 (derived from DOB).
 | native_region | Native Region | dropdown | P1 | Regional identifier (optional, for matching) |
 | local_festivals | Local Festivals | multi_select | P1 | Community-specific preferences |
 
-## 6. Education & Professional (Week 3+; contributes to reciprocity)
+## 6. Education & Professional (Week 3+)
 
 | Field ID | Label | Bundle | Type | Required | Validation/Options |
 |---|---|---|---|---|---|
@@ -103,7 +103,7 @@ Defer addresses (present/permanent) to later phase to reduce PII in MVP.
 | creator_contact_number | Contact Number | phone_input | cond | required unless Candidate |
 | how_did_you_hear_about_us | How Did You Hear About Us? | dropdown | yes | options_ref: how_did_you_hear_list |
 
-## 9. Additional Family (Week 3+; contributes to reciprocity)
+## 9. Additional Family (Week 3+)
 
 | Field ID | Label | Bundle | Type | Required |
 |---|---|---|---|---|
@@ -152,11 +152,11 @@ Defer addresses (present/permanent) to later phase to reduce PII in MVP.
 
 ## 12. Validation Strategy
 - Week 1-2: HTML5 + simple TypeScript checks.
-- Week 3+: Zod + React Hook Form schemas (one per step), aligned to reciprocity bundles.
+- Week 3+: Zod + React Hook Form schemas (one per step), aligned to field groups.
 
-## 13. Access & Reciprocity Summary
-- MVP: Photo-gated only. Users must have ≥1 approved photo to view others’ photos (owner privacy still applies). Non-photo bundles do not gate visibility in MVP.
-- Phase 2: Education/occupation/income/family bundles may gate visibility; grace period and overrides considered.
+## 13. Access & Privacy Summary
+- MVP: Users can browse all profiles immediately. Photo request feature allows users to request photos from profiles that don't have any photos yet.
+- Photo privacy settings (Everyone/Premium/Sent/Accepted/Request) control who can view photos when they exist.
 
 ## 14. Notes for AI Implementation
 - Build vertical slices page-by-page; start with Step 1 + minimal profile view.
