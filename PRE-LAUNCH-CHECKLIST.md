@@ -4,6 +4,51 @@
 
 ---
 
+## 🔥 Week 0.5: De-Risking (4 hours, Thursday before Week 1)
+
+**Purpose**: Validate all external services before Day 1 to avoid Week 1 blockers.
+
+### Checklist
+
+- [ ] **Cloudinary Smoke Test** (1 hour): Upload test image from Node.js Vercel API route
+  - [ ] Create test route: `app/api/test-cloudinary/route.ts`
+  - [ ] Upload 100KB test image to Cloudinary
+  - [ ] Verify image URL works and optimization is applied
+  - [ ] If fails: Set `STORAGE_PROVIDER=supabase` in `.env.local`, defer Cloudinary to Week 4
+
+- [ ] **Supabase Auth Email Test** (30 min): Send 5 verification emails, confirm delivery
+  - [ ] Create 5 test accounts via Supabase dashboard
+  - [ ] Verify emails arrive in inbox (check spam)
+  - [ ] If fails or rate-limited: Use Resend for verification from Day 1 (see workaround below)
+
+- [ ] **Razorpay Test Payment** (1 hour): Complete test payment, verify webhook
+  - [ ] Create test payment via Razorpay test keys
+  - [ ] Verify webhook arrives at `https://your-vercel-app.vercel.app/api/payments/webhook`
+  - [ ] Check webhook signature validation works
+  - [ ] If fails: Defer payments to Week 5, focus on profiles first
+
+- [ ] **Community Data Seeding** (1 hour): Seed 20 communities from PROFILE-FIELDS.md
+  - [ ] Export community arrays from `PROFILE-FIELDS.md`
+  - [ ] Create SQL seed script or insert via Supabase dashboard
+  - [ ] Verify all communities appear in dropdowns
+  - [ ] If missing: Use hardcoded arrays in Week 1, seed Week 2
+
+- [ ] **Create .env.local** (30 min): All keys documented in TECH-STACK.md
+  - [ ] Copy template from this document
+  - [ ] Fill in all Supabase keys (Dev project)
+  - [ ] Add Cloudinary keys (if smoke test passed)
+  - [ ] Add Razorpay test keys
+  - [ ] Verify `.env.local` is in `.gitignore`
+
+### If Any Test Fails
+
+- **Cloudinary fails**: Set `STORAGE_PROVIDER=supabase`, defer Cloudinary to Week 4
+- **Supabase email fails**: Use Resend for verification emails from Day 1 (see workaround below)
+- **Razorpay fails**: Defer payments to Week 5, focus on profiles
+- **Community data missing**: Use hardcoded arrays in Week 1, seed Week 2
+
+---
+
 ## 📋 DAY 0: Infrastructure & Accounts Setup
 
 ### **Required Accounts (Create Before Day 1)**
@@ -15,6 +60,7 @@
   - [ ] Note down: `SUPABASE_SERVICE_ROLE_KEY` for both projects (keep secret!)
   - [ ] Enable Email Auth provider in both projects
   - [ ] Configure email templates (password reset, email verification)
+  - [ ] **⚠️ Email Rate Limit**: Supabase Free tier limits auth emails to **4/hour**. If you expect >4 signups/hour in MVP, use Resend workaround (see "Supabase Auth Email Configuration" section below)
 
 - [ ] **Vercel**
   - [ ] Account created and connected to GitHub
@@ -22,12 +68,11 @@
   - [ ] Connect GitHub repository
   - [ ] Note: Auto-deploys on push to main branch
 
-- [ ] **Cloudflare**
+- [ ] **Cloudinary**
   - [ ] Account created
-  - [ ] R2 bucket created: `cc-matrimony-photos` (private bucket)
-  - [ ] Note down: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`
-  - [ ] Configure CORS for Vercel domain (when known)
-  - [ ] Set up custom domain (optional, for CDN): `cdn.matri.naveevo.com`
+  - [ ] Free tier enabled (25GB storage + 25GB bandwidth/month)
+  - [ ] Note down: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+  - [ ] Configure upload presets (optional, for signed uploads)
 
 - [ ] **Razorpay**
   - [ ] Merchant account created
@@ -85,13 +130,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# Cloudflare R2 (Add Week 3)
-R2_ACCOUNT_ID=xxxxxxxxxxxxxxxxxxxx
-R2_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxx
-R2_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxx
-R2_BUCKET_NAME=cc-matrimony-photos
-R2_PUBLIC_URL=https://cdn.matri.naveevo.com  # Optional CDN URL
-STORAGE_PROVIDER=r2  # fallback to 'supabase' if R2 smoke test fails
+# Cloudinary (Add Week 3)
+CLOUDINARY_CLOUD_NAME=xxxxxxxxxxxxxxxxxxxx
+CLOUDINARY_API_KEY=xxxxxxxxxxxxxxxxxxxx
+CLOUDINARY_API_SECRET=xxxxxxxxxxxxxxxxxxxx  # Keep secret!
+STORAGE_PROVIDER=cloudinary  # fallback to 'supabase' if Cloudinary smoke test fails
 
 # Razorpay (Required Week 4)
 RAZORPAY_KEY_ID=rzp_test_xxxxx  # Use rzp_live_xxx for production
@@ -193,6 +236,8 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
   - [ ] `photos` table
   - [ ] `interests` table
   - [ ] `subscriptions` table
+  - [ ] `payment_events` table (for Week 6 webhook idempotency)
+  - [ ] `verification_tokens` table (only if using Resend workaround for email)
   - [ ] `messages` table (for Phase 2 chat)
   - [ ] `communities` table
   - [ ] `sub_communities` table
@@ -207,6 +252,70 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
   - [ ] Sub-communities
   - [ ] Education/occupation lists
 
+### **Supabase Auth Email Configuration**
+
+**Critical**: Supabase Free tier limits auth emails to **4/hour**.
+
+**Decision Point**: If you expect <4 signups/hour in MVP, use default Supabase email verification (simpler). If >4 signups/hour expected, implement Resend workaround below.
+
+**Week 1-2 Workaround** (if >4 signups/hour expected):
+
+1. Disable Supabase email verification in auth settings
+2. Use Resend for all auth emails (no rate limit)
+3. Implement custom verification flow:
+
+```typescript
+// app/api/auth/register/route.ts
+import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+const resend = new Resend(process.env.RESEND_API_KEY!);
+
+export async function POST(req: Request) {
+  const { email, password } = await req.json();
+
+  // 1. Create user with email_verified: false
+  const { data: user, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: false, // Disable Supabase email
+  });
+
+  if (error) throw error;
+
+  // 2. Generate custom verification token
+  const token = crypto.randomUUID();
+  await supabase
+    .from('verification_tokens')
+    .insert({ user_id: user.user.id, token, expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+
+  // 3. Send via Resend (no rate limit)
+  await resend.emails.send({
+    from: 'noreply@matri.naveevo.com',
+    to: email,
+    subject: 'Verify your email',
+    html: `<a href="${process.env.NEXT_PUBLIC_APP_URL}/verify?token=${token}">Verify Email</a>`,
+  });
+
+  return Response.json({ success: true });
+}
+```
+
+**Required table** (add to schema):
+```sql
+CREATE TABLE verification_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
 ### **RLS Policies (Week 7)**
 
 - [ ] Profiles: Users can view approved profiles
@@ -219,7 +328,7 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 
 ## 🧰 Admin Operations (MVP Weeks 1-8)
 - **Profile approvals**: Auto-approved (`is_approved = true`). If a profile must be hidden, run `UPDATE profiles SET is_approved = false WHERE id = 'uuid';` in Supabase SQL.
-- **Photo moderation**: Photos auto-approved. Remove bad uploads with `DELETE FROM photos WHERE id = 'uuid';` and delete the file from R2 using the Cloudflare dashboard.
+- **Photo moderation**: Photos auto-approved. Remove bad uploads with `DELETE FROM photos WHERE id = 'uuid';` and delete the image from Cloudinary using the Cloudinary dashboard or Admin API.
 - **User suspensions**: Suspend via Supabase Auth (`UPDATE auth.users SET banned_until = NOW() + INTERVAL '7 days' WHERE id = 'uuid';`). Volume expectation: <5 suspensions/week @ 100 users.
 - **Escalation rule**: If manual operations exceed 2 hours in any week, log the pain point and revisit the Phase 2 admin UI scope.
 
@@ -239,8 +348,7 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 ### **Week 3: Photos**
 
 - [ ] Can upload profile photo
-- [ ] Photo compresses client-side (<500KB)
-- [ ] Photo uploads to Cloudflare R2
+- [ ] Photo uploads to Cloudinary (Cloudinary handles optimization automatically)
 - [ ] Photo displays correctly
 - [ ] Can edit profile
 - [ ] Photo gallery works
@@ -459,7 +567,7 @@ WHERE profile_id = (SELECT id FROM profiles WHERE email = 'user@example.com');
 -- Delete specific photo
 DELETE FROM photos 
 WHERE id = 'photo-uuid-here';
--- Note: Also delete from Cloudflare R2 manually via dashboard
+-- Note: Also delete from Cloudinary manually via dashboard or Admin API
 ```
 
 ### **Data Export (GDPR/DPDPA)**
@@ -501,7 +609,7 @@ DELETE FROM profiles WHERE email = 'user@example.com' AND deleted_at < NOW() - I
 
 - [ ] All environment variables set in Vercel dashboard
 - [ ] Supabase Prod project configured
-- [ ] Cloudflare R2 bucket created and configured
+- [ ] Cloudinary account created and configured
 - [ ] Razorpay live keys configured (not test keys)
 - [ ] Resend domain verified and sending emails
 - [ ] All tests passing
@@ -565,7 +673,7 @@ DELETE FROM profiles WHERE email = 'user@example.com' AND deleted_at < NOW() - I
 2. **Use test keys in development** - Switch to live keys only in production
 3. **Test payments in test mode first** - Verify webhook before going live
 4. **Backup database regularly** - Supabase handles this, but verify
-5. **Monitor storage usage** - Cloudflare R2 and Supabase have limits
+5. **Monitor storage usage** - Cloudinary (25GB storage + 25GB bandwidth/month free) and Supabase have limits
 6. **Keep service role keys secret** - Never expose in client code
 7. **Test email deliverability** - Verify SPF/DKIM/DMARC before launch
 

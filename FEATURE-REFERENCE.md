@@ -58,9 +58,10 @@ For AI-driven development (Cursor/Windsurf), implement features in this order:
 - Subscription Plans Display
 - Razorpay Integration
 
-**Week 5 (Reciprocity):**
-- Reciprocity State Calculation (MVP: Simple photo gate only)
-- Photo visibility gating (users must have ≥1 approved photo to view others' photos)
+**Week 5 (Reciprocity - 2 days + 5-day buffer):**
+- Day 22: Implement `canViewPhotos()` function + API route
+- Day 23: Add UI locked state with "Upload a photo" CTA
+- Day 24-28: **BUFFER** (use for Week 1-4 catch-up or polish)
 - Note: Grace period and field locking (education/occupation/income) deferred to Phase 2
 
 **Week 6 (Chat + Notifications):**
