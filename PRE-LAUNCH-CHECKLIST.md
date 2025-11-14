@@ -1,6 +1,6 @@
 # CC Matrimony - Pre-Launch Checklist & Manual Operations Guide
 
-> **Purpose**: Ensure all infrastructure, accounts, and processes are ready before Day 1 of development. This document also serves as a reference for manual operations during MVP (admin panel will be built in Weeks 7-9).
+> **Purpose**: Ensure all infrastructure, accounts, and processes are ready before Day 1 of development. This document also serves as a reference for manual operations during MVP (admin panel will be built in Weeks 4-6).
 
 ---
 
@@ -356,7 +356,7 @@ CREATE TABLE verification_tokens (
 - [ ] Can view other profiles
 - [ ] Profile view tracking works
 
-### **Week 4: Interests & Payments**
+### **Week 7: Interests & Payments**
 
 - [ ] Can send interest
 - [ ] Daily limit enforced (3 for free)
@@ -372,7 +372,7 @@ CREATE TABLE verification_tokens (
 - [ ] Limits increase for premium users
 - [ ] Test payment with Razorpay test card
 
-### **Week 5: Photo Request Feature**
+### **Week 8: Photo Request Feature**
 
 - [ ] Photo request API routes work
 - [ ] "Request Photo" button shows for profiles without photos
@@ -380,7 +380,7 @@ CREATE TABLE verification_tokens (
 - [ ] Duplicate requests prevented
 - [ ] Notification sent to profile owner
 
-### **Week 6: Notifications**
+### **Week 9: Notifications**
 
 - [ ] Welcome email sends on registration
 - [ ] Interest received email sends
@@ -388,21 +388,21 @@ CREATE TABLE verification_tokens (
 - [ ] Password reset email works
 - [ ] In-app notifications display
 
-### **Week 7-9: Admin Panel**
+### **Week 4-6: Admin Panel**
 
 > **See [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md) section 4 for complete implementation checklist and section 2 for feature details.**
 
-**Week 7: Admin Foundation**
+**Week 4: Admin Foundation**
 - [ ] Admin login page works
 - [ ] Admin authentication protects routes
 - [ ] User management (list, search, filters, actions) works
 
-**Week 8: Profile & Payments**
+**Week 5: Profile & Payments**
 - [ ] Profile approval queue and workflow work
 - [ ] Photo moderation queue and actions work
 - [ ] Payment management and refund processing work
 
-**Week 9: Analytics & Settings**
+**Week 6: Analytics & Settings**
 - [ ] Analytics dashboard displays all statistics
 - [ ] System settings and feature toggles work
 - [ ] Content management pages work

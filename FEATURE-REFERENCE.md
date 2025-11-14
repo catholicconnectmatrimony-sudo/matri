@@ -45,10 +45,10 @@ When you see a feature on any matrimony portal, use **Ctrl+F** to search for it 
 **High-Level Overview:**
 - **Weeks 1-2**: Foundation (Auth, Basic Profile)
 - **Week 3**: Photos + Search
-- **Week 4**: Interests + Payments
-- **Week 5**: Photo Request Feature
-- **Week 6**: Notifications
-- **Weeks 7-9**: Admin Panel
+- **Weeks 4-6**: Admin Panel
+- **Week 7**: Interests + Payments
+- **Week 8**: Photo Request Feature
+- **Week 9**: Notifications
 - **Week 10**: Polish + Launch
 
 ### 🚀 MVP Snapshot
@@ -375,10 +375,10 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 
 ## ⚙️ ADMIN & MANAGEMENT
 
-> **Complete admin panel specifications, MVP features (Weeks 7-9), and future phases (Phase 2+) are documented in [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md).**
+> **Complete admin panel specifications, MVP features (Weeks 4-6), and future phases (Phase 2+) are documented in [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md).**
 
 **Quick Summary:**
-- **MVP/Phase 1 (Weeks 7-9)**: Admin Authentication, User Management, Profile Approval, Photo Moderation, Payment Management, Analytics Dashboard, System Settings, Content Management
+- **MVP/Phase 1 (Weeks 4-6)**: Admin Authentication, User Management, Profile Approval, Photo Moderation, Payment Management, Analytics Dashboard, System Settings, Content Management
 - **Phase 2**: Advanced Roles, Enhanced Bulk Operations, Enhanced Analytics, Email/SMS Broadcasting, Enhanced Export Capabilities, Enhanced Audit Trail, Coupon Code Management
 - **Phase 3**: Red Flag Dashboard, Churn Signals, Advanced Reporting
 - **Phase 4**: Automated Workflows, Advanced Permissions

@@ -124,7 +124,7 @@ The user will be notified to upload photos.
 > **See [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md) for complete admin panel specifications, features, implementation plan, and future phases.**
 
 **Quick Reference:**
-- **Admin Panel**: Next.js app on Vercel, protected via Supabase Auth (Weeks 7-9)
+- **Admin Panel**: Next.js app on Vercel, protected via Supabase Auth (Weeks 4-6)
 - **Tech Stack**: React Admin + ra-supabase for CRUD, shadcn/ui for custom components
 - **MVP Features**: Authentication, User/Profile/Payment Management, Analytics, Settings, Content Management
 - **Capabilities**: User management, profile approvals, payment tracking, analytics
@@ -622,6 +622,8 @@ export const checkDatabaseSize = async () => {
 
 ## 17. Implementation Roadmap
 
+> Schedule Adjustment (AI Solo): Admin Panel is prioritized earlier for moderation and management readiness. Interests & Subscriptions are moved to Week 7, Photo Request to Week 8, Engagement (notifications) to Week 9. Day numbers are approximate and serve as relative guidance after rescheduling.
+
 > Timeline context: These four phases cover the **eight-week build cycle leading into launch (Month −2 to Month 0)**. All communities are treated equally - community pages auto-generate from database.
 
 > **AI Development Note:** This roadmap is optimized for AI-driven development (Cursor/Windsurf). Build incrementally, test after each feature, and avoid generating entire pages in one prompt.
@@ -645,45 +647,47 @@ export const checkDatabaseSize = async () => {
 - Test: User can register → create profile → view own profile
 - **Checkpoint:** Working auth + basic profile (no photos, no search yet)
 
-### **Phase 2 – Core Platform (Weeks 3-5)** [SIMPLIFIED FOR AI]
+### **Phase 2 – Core Platform (Weeks 3, 7-8)** [SIMPLIFIED FOR AI]
 **Week 3: Photos + Search**
 - Day 8-9: Photo upload (direct upload to Cloudinary via Vercel API; Cloudinary handles optimization automatically; defer watermarking transformations)
 - Day 10-11: Basic search page (simple WHERE filters: age, gender, community)
 - Day 12-14: Profile detail page + photo gallery
 - **Checkpoint:** Users can upload photos, search, and view other profiles
 
-**Week 4: Interests + Subscriptions**
+<!-- SCHEDULE ADJUSTMENT: Interests/Subs moved to Week 7 to prioritize Admin -->
+**Week 7: Interests + Subscriptions**
 - Day 15-16: Interest system (send/receive/accept/decline)
 - Day 17-18: Subscription plans table + basic plan display
 - Day 19-21: Razorpay integration (checkout page + webhook)
 - **Checkpoint:** Users can send interests and purchase plans
 
-**Week 5: Photo Request Feature**
+<!-- SCHEDULE ADJUSTMENT: Photo Request moved to Week 8 to avoid overlap -->
+**Week 8: Photo Request Feature**
 - Day 22-24: Implement photo request API routes and database table
 - Day 25-26: Add "Request Photo" button UI for profiles without photos + notifications
 - Day 27-28: Testing and polish
 - **Checkpoint:** Photo request feature live; users can request photos from profiles without any photos
 
-### **Phase 3 – Engagement (Week 6)** [SIMPLIFIED FOR AI]
-**Week 6: Notifications & Engagement**
+### **Phase 3 – Engagement (Week 9)** [SIMPLIFIED FOR AI]
+**Week 9: Notifications & Engagement**
 - Day 29-31: Email notifications via Resend (templates: welcome, interest received, match)
 - Day 32-35: Interest reminders, profile completion nudges, daily/weekly digest emails
 - **Checkpoint:** Engagement emails working end-to-end
 
-### **Phase 4 – Admin Panel (Weeks 7-9)** [MVP]
+### **Phase 4 – Admin Panel (Weeks 4-6)** [MVP]
 
 > **See [ADMIN-MANAGEMENT-SPEC.md](./ADMIN-MANAGEMENT-SPEC.md) section 4 for detailed week-by-week implementation plan.**
 
-**Week 7: Admin Foundation**
+**Week 4: Admin Foundation**
 - Admin authentication + user management (list, search, suspend, activate)
 - User detail views + subscription management
 
-**Week 8: Profile & Payment Management**
+**Week 5: Profile & Payment Management**
 - Profile approval queue (approve/reject with reasons)
 - Photo moderation queue (review flagged photos)
 - Payment management (view payments, process refunds)
 
-**Week 9: Analytics & Settings**
+**Week 6: Analytics & Settings**
 - Analytics dashboard (user stats, profile stats, payment stats)
 - System settings (feature toggles, email/SMS config, payment gateway)
 - Content management (success stories, testimonials)
@@ -713,7 +717,7 @@ CLOUDINARY_API_SECRET=xxxxxxxxxxxxxxxxxxxx  # Keep secret!
 RAZORPAY_KEY_ID=rzp_test_xxxxx
 RAZORPAY_KEY_SECRET=xxxxx
 
-# Communications (Required Week 6)
+# Communications (Required Week 9)
 RESEND_API_KEY=re_xxxxx
 # FAST2SMS_API_KEY (Deferred to Phase 2)
 
@@ -722,7 +726,7 @@ NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
 NEXT_PUBLIC_POSTHOG_KEY=phc_xxxxx
 NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 
-# Admin (Required Weeks 7-9)
+# Admin (Required Weeks 4-6)
 ADMIN_EMAIL=admin@matri.naveevo.com
 ADMIN_PASSWORD_HASH=xxxxx
 ```
@@ -996,7 +1000,7 @@ USING (sender_id = auth.uid() OR receiver_id = auth.uid());
 - Week 1: Layout shell (Header, Footer), Auth UI, Dashboard shell, Profile form UI.
 - Week 2: Search filters + results UI, Profile card, Profile detail UI.
 - Week 3: Photo upload wired (Vercel API → Cloudinary), introduce Zustand where cross-feature state emerges.
-- Week 4: Interests UI + backend, subscriptions UI + backend.
+- Week 7: Interests UI + backend, subscriptions UI + backend.
 
 ### 25.3 UI Patterns
 - Use Tailwind defaults for spacing/typography/colors; extract tokens only after repeated use.

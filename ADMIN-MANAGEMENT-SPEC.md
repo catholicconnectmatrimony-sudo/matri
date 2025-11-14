@@ -1,6 +1,6 @@
 # CC Matrimony Admin Management Specification
 
-> **Status**: Admin panel is **NOW part of MVP** (Weeks 7-9).  
+> **Status**: Admin panel is **NOW part of MVP** (Weeks 4-6).  
 > **This is the single source of truth for all admin panel features, implementation, and future phases.**  
 > **Goal**: Build the most advanced admin panel possible with current tech stack (Next.js, Supabase, Vercel, React Admin, shadcn/ui, Recharts, Resend, Sentry).
 
@@ -8,7 +8,7 @@
 
 ## 1. Purpose & Scope
 
-- **MVP Timeline**: Weeks 7-9 (3 weeks for admin panel implementation)
+- **MVP Timeline**: Weeks 4-6 (3 weeks for admin panel implementation)
 - **Goal**: Provide comprehensive, advanced admin interface leveraging all capabilities of the tech stack
 - **Tech Stack**: 
   - **Frontend**: React Admin + ra-supabase + shadcn/ui + Recharts
@@ -17,19 +17,19 @@
 - **Platform**: CC Matrimony (matri.naveevo.com)
 - **Documentation**: All admin-related information is consolidated in this file. Other files reference this document.
 
-## 2. MVP Admin Features (Weeks 7-9) - Advanced Implementation
+## 2. MVP Admin Features (Weeks 4-6) - Advanced Implementation
 
 > **Note**: This admin panel leverages ALL capabilities of the tech stack to provide maximum functionality within the 3-week timeline.
 
-### **Week 7: Admin Foundation**
+### **Week 4: Admin Foundation**
 
-#### **7.1 Admin Authentication** (P0)
+#### **4.1 Admin Authentication** (P0)
 - Secure admin login page (`/admin/login`)
 - Role-based access control (Super Admin only for MVP)
 - Session management (30-day expiry)
 - Protected admin routes (redirect to login if not authenticated)
 
-#### **7.2 Advanced User Management** (P0)
+#### **4.2 Advanced User Management** (P0)
 - **User List & Search** (PostgreSQL Full-text Search):
   - View all users in advanced table (React Admin)
   - Full-text search by email, phone, name, profile ID (PostgreSQL GIN index)
@@ -67,9 +67,9 @@
   - Export user data (GDPR/DPDPA compliance)
   - View user's photo requests sent/received
 
-### **Week 8: Profile & Payment Management**
+### **Week 5: Profile & Payment Management**
 
-#### **8.1 Advanced Profile Approval Queue** (P0)
+#### **5.1 Advanced Profile Approval Queue** (P0)
 - **Pending Profiles List** (Real-time Updates):
   - View all pending profiles (auto-refresh via Supabase Realtime)
   - Advanced filters:
@@ -104,7 +104,7 @@
   - Bulk profile operations (approve, reject, edit, export)
   - Policy: Profiles are visible even without photos; "Request Photo" prompts appear in user UI when a profile has zero approved photos
 
-#### **8.2 Advanced Photo Moderation Queue** (P0)
+#### **5.2 Advanced Photo Moderation Queue** (P0)
 - **Flagged Photos List** (Real-time):
   - View all flagged/reported photos (auto-refresh)
   - Filter by:
@@ -128,7 +128,7 @@
   - Delete photo permanently (with Cloudinary cleanup)
   - View photo analytics (views, downloads if applicable)
 
-#### **8.3 Advanced Payment Management** (P0)
+#### **5.3 Advanced Payment Management** (P0)
 - **Payment Overview** (Advanced Table):
   - View all payments (with real-time updates)
   - Advanced filters:
@@ -165,9 +165,9 @@
     - Average transaction value
     - Revenue forecasting
 
-### **Week 9: Analytics & Settings**
+### **Week 6: Analytics & Settings**
 
-#### **9.1 Advanced Analytics Dashboard** (P1)
+#### **6.1 Advanced Analytics Dashboard** (P1)
 - **Real-time Metrics** (Supabase Realtime):
   - Live user count
   - Active sessions (last 5 minutes)
@@ -213,7 +213,7 @@
   - Interests sent/received ratio
   - Profile views per user
 
-#### **9.2 Advanced System Settings** (P1)
+#### **6.2 Advanced System Settings** (P1)
 - **Feature Flags** (Database-driven):
   - Photo Request Feature (ON/OFF)
   - Photo Approval Workflow (ON/OFF)
@@ -259,7 +259,7 @@
   - Manual trigger for cron jobs
   - Cron job status monitoring
 
-#### **9.3 Advanced Content Management** (P1)
+#### **6.3 Advanced Content Management** (P1)
 - **Success Stories** (Full CMS):
   - Add/edit/delete success stories (rich text editor)
   - Upload multiple photos (via Cloudinary)
@@ -293,7 +293,7 @@
   - SEO optimization
   - Publishing workflow
 
-## 3. Additional Advanced MVP Features (Weeks 7-9)
+## 3. Additional Advanced MVP Features (Weeks 4-6)
 
 ### **3.1 Monitoring & Observability Dashboard** (P1)
 - **System Health** (Real-time):
@@ -449,7 +449,7 @@
 - [ ] Implement audit trail logging (PostgreSQL triggers)
 - [ ] Set up error logging (Sentry integration)
 
-### **Week 8 Implementation**
+### **Week 5 Implementation**
 - [ ] Build advanced profile approval queue:
   - [ ] Real-time pending profiles list (Supabase Realtime)
   - [ ] Bulk approve/reject functionality
@@ -470,7 +470,7 @@
 - [ ] Implement bulk operations API endpoints
 - [ ] Add data export/import functionality
 
-### **Week 9 Implementation**
+### **Week 6 Implementation**
 - [ ] Build advanced analytics dashboard:
   - [ ] Real-time metrics (Supabase Realtime)
   - [ ] Interactive charts (Recharts - all chart types)
@@ -543,32 +543,32 @@
 
 | Feature Category | MVP Status | Week | Priority | Tech Used |
 |----------------|------------|------|----------|-----------|
-| Admin Authentication | ✅ MVP | 7 | P0 | Supabase Auth |
-| Advanced User Management | ✅ MVP | 7 | P0 | React Admin + PostgreSQL Full-text |
-| Advanced Profile Approval | ✅ MVP | 8 | P0 | Real-time + Bulk Operations |
-| Advanced Photo Moderation | ✅ MVP | 8 | P0 | Real-time + Cloudinary API |
-| Advanced Payment Management | ✅ MVP | 8 | P0 | Razorpay API + Analytics |
-| Advanced Analytics Dashboard | ✅ MVP | 9 | P1 | Recharts + Supabase Realtime |
-| Advanced System Settings | ✅ MVP | 9 | P1 | Feature Flags + Resend API |
-| Advanced Content Management | ✅ MVP | 9 | P1 | Rich Text Editor + Cloudinary |
-| Bulk Operations | ✅ MVP | 7-9 | P1 | Batch API Endpoints |
-| Data Export/Import | ✅ MVP | 7-9 | P1 | CSV/JSON/Excel + Scheduled Exports |
-| Audit Trail | ✅ MVP | 7-9 | P1 | PostgreSQL Triggers + Activity Logs |
-| Real-time Updates | ✅ MVP | 7-9 | P1 | Supabase Realtime |
-| Error Log Viewer | ✅ MVP | 9 | P1 | Sentry Integration |
-| Cron Job Management | ✅ MVP | 9 | P1 | Vercel Cron Logs |
-| Email Campaigns | ✅ MVP | 9 | P1 | Resend API + Segmentation + A/B Testing |
-| Global Search | ✅ MVP | 7-9 | P1 | PostgreSQL Full-text |
-| Data Visualization | ✅ MVP | 9 | P1 | Recharts |
-| User Activity Tracking | ✅ MVP | 7-9 | P1 | Supabase Events |
-| Conversion Funnel | ✅ MVP | 9 | P1 | Analytics Queries |
-| Monitoring Dashboard | ✅ MVP | 9 | P1 | Sentry + System Metrics + Cron Logs |
-| User Impersonation | ✅ MVP | 7 | P1 | Support Tool + Audit Logging |
-| Advanced Reporting | ✅ MVP | 9 | P1 | Custom Reports + Scheduled Delivery |
-| Data Cleanup Tools | ✅ MVP | 8-9 | P1 | Duplicate Detection + Archive |
-| Invoice Generation | ✅ MVP | 8 | P1 | PDF Generation |
-| Profile Comparison | ✅ MVP | 8 | P1 | Side-by-side View |
-| Revenue Forecasting | ✅ MVP | 9 | P1 | Analytics Calculations |
+| Admin Authentication | ✅ MVP | 4 | P0 | Supabase Auth |
+| Advanced User Management | ✅ MVP | 4 | P0 | React Admin + PostgreSQL Full-text |
+| Advanced Profile Approval | ✅ MVP | 5 | P0 | Real-time + Bulk Operations |
+| Advanced Photo Moderation | ✅ MVP | 5 | P0 | Real-time + Cloudinary API |
+| Advanced Payment Management | ✅ MVP | 5 | P0 | Razorpay API + Analytics |
+| Advanced Analytics Dashboard | ✅ MVP | 6 | P1 | Recharts + Supabase Realtime |
+| Advanced System Settings | ✅ MVP | 6 | P1 | Feature Flags + Resend API |
+| Advanced Content Management | ✅ MVP | 6 | P1 | Rich Text Editor + Cloudinary |
+| Bulk Operations | ✅ MVP | 4-6 | P1 | Batch API Endpoints |
+| Data Export/Import | ✅ MVP | 4-6 | P1 | CSV/JSON/Excel + Scheduled Exports |
+| Audit Trail | ✅ MVP | 4-6 | P1 | PostgreSQL Triggers + Activity Logs |
+| Real-time Updates | ✅ MVP | 4-6 | P1 | Supabase Realtime |
+| Error Log Viewer | ✅ MVP | 6 | P1 | Sentry Integration |
+| Cron Job Management | ✅ MVP | 6 | P1 | Vercel Cron Logs |
+| Email Campaigns | ✅ MVP | 6 | P1 | Resend API + Segmentation + A/B Testing |
+| Global Search | ✅ MVP | 4-6 | P1 | PostgreSQL Full-text |
+| Data Visualization | ✅ MVP | 6 | P1 | Recharts |
+| User Activity Tracking | ✅ MVP | 4-6 | P1 | Supabase Events |
+| Conversion Funnel | ✅ MVP | 6 | P1 | Analytics Queries |
+| Monitoring Dashboard | ✅ MVP | 6 | P1 | Sentry + System Metrics + Cron Logs |
+| User Impersonation | ✅ MVP | 4 | P1 | Support Tool + Audit Logging |
+| Advanced Reporting | ✅ MVP | 6 | P1 | Custom Reports + Scheduled Delivery |
+| Data Cleanup Tools | ✅ MVP | 5-6 | P1 | Duplicate Detection + Archive |
+| Invoice Generation | ✅ MVP | 5 | P1 | PDF Generation |
+| Profile Comparison | ✅ MVP | 5 | P1 | Side-by-side View |
+| Revenue Forecasting | ✅ MVP | 6 | P1 | Analytics Calculations |
 | Advanced Roles | 🔄 Phase 2 | - | P2 | Extended RBAC |
 | Partner & Agency Management | 🔄 Phase 6+ | - | P2 | Basic CRUD + User Assignment |
 | SMS Broadcasting | 🔄 Phase 2 | - | P2 | SMS Provider API |
@@ -636,7 +636,7 @@
 
 | Phase | Focus | Key Features |
 |-------|-------|--------------|
-| **MVP (Weeks 7-9)** | Advanced Admin Panel | Authentication, Advanced User/Profile/Payment Management, Real-time Analytics, Monitoring Dashboard, Email Campaigns, Export/Import, Audit Trail, Bulk Operations, Data Visualization, Error Logs, Cron Management, User Impersonation, Advanced Reporting |
+| **MVP (Weeks 4-6)** | Advanced Admin Panel | Authentication, Advanced User/Profile/Payment Management, Real-time Analytics, Monitoring Dashboard, Email Campaigns, Export/Import, Audit Trail, Bulk Operations, Data Visualization, Error Logs, Cron Management, User Impersonation, Advanced Reporting |
 | **Phase 2** | Enhanced Capabilities | Advanced Roles, Enhanced Bulk Operations (beyond MVP), Enhanced Analytics (beyond MVP), Email/SMS Broadcasting, Enhanced Export Capabilities, Enhanced Audit Trail, Coupon Code Management |
 | **Phase 3** | Advanced Monitoring & Safety | Red Flag Dashboard, Churn Signals, Advanced Reporting |
 | **Phase 4** | Automation | Automated Workflows, Advanced Permissions |
@@ -646,5 +646,5 @@
 ---
 
 **Last Updated**: January 2025  
-**Status**: MVP (Phase 1) - Weeks 7-9 Implementation  
+**Status**: MVP (Phase 1) - Weeks 4-6 Implementation  
 **Future Phases**: See section 10 for brief Phase 2+ overview. Detailed planning will be done when starting each phase.
