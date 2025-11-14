@@ -19,7 +19,8 @@
 - [ ] **Supabase Auth Email Test** (30 min): Send 5 verification emails, confirm delivery
   - [ ] Create 5 test accounts via Supabase dashboard
   - [ ] Verify emails arrive in inbox (check spam)
-  - [ ] If fails or rate-limited: Use Resend for verification from Day 1 (see workaround below)
+  - [ ] If fails or rate-limited: Configure SMTP (Postmark/SES) for auth emails, or use the Resend API workaround (see below)
+  - [ ] Recommended: Configure Resend SMTP for Supabase auth emails (host `smtp.resend.com`, username `resend`, password = `RESEND_API_KEY`). Use Resend API for non-auth notifications. Reference: https://resend.com/supabase
 
 - [ ] **Razorpay Test Payment** (1 hour): Complete test payment, verify webhook
   - [ ] Create test payment via Razorpay test keys
@@ -43,7 +44,9 @@
 ### If Any Test Fails
 
 - **Cloudinary fails**: Set `STORAGE_PROVIDER=supabase`, defer Cloudinary to Week 4
-- **Supabase email fails**: Use Resend for verification emails from Day 1 (see workaround below)
+ - **Supabase email issues**: Optionally switch to a Resend-driven auth email flow (see workaround below)
+  - Set up a minimal Edge Function to send emails via Resend using your `RESEND_API_KEY`.
+  - Keep templates consistent across password reset and verification flows.
 - **Razorpay fails**: Defer payments to Week 5, focus on profiles
 - **Community data missing**: Use hardcoded arrays in Week 1, seed Week 2
 
@@ -60,7 +63,7 @@
   - [ ] Note down: `SUPABASE_SERVICE_ROLE_KEY` for both projects (keep secret!)
   - [ ] Enable Email Auth provider in both projects
   - [ ] Configure email templates (password reset, email verification)
-  - [ ] **⚠️ Email Rate Limit**: Supabase Free tier limits auth emails to **4/hour**. If you expect >4 signups/hour in MVP, use Resend workaround (see "Supabase Auth Email Configuration" section below)
+- [ ] **⚠️ Email Rate Limit**: Supabase built-in mailer enforces a low, project-wide limit on auth emails (historically ~2–4 emails/hour across signup/verification/reset). If you expect bursts above this, consider a custom SMTP or the Resend workaround (see "Supabase Auth Email Configuration").
 
 - [ ] **Vercel**
   - [ ] Account created and connected to GitHub
@@ -144,6 +147,7 @@ RAZORPAY_KEY_SECRET=xxxxx
 RESEND_API_KEY=re_xxxxx
 RESEND_FROM_EMAIL=noreply@matri.naveevo.com
 RESEND_REPLY_TO=support@matri.naveevo.com
+RESEND_GUIDE=https://resend.com/supabase  # Reference for integration with Supabase
 
 # Monitoring (Optional, add Week 7)
 NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
@@ -253,15 +257,19 @@ NEXT_PUBLIC_APP_URL=https://matri.naveevo.com
 
 ### **Supabase Auth Email Configuration**
 
-**Critical**: Supabase Free tier limits auth emails to **4/hour**.
+**Critical**: Supabase built-in mailer enforces a low, project-wide limit on auth emails (historically ~2–4 emails/hour across signup/verification/reset).
 
-**Decision Point**: If you expect <4 signups/hour in MVP, use default Supabase email verification (simpler). If >4 signups/hour expected, implement Resend workaround below.
+**Decision Point**: For low auth volume you can trial the built-in mailer. For sustained or burst traffic, configure Resend SMTP in Supabase for auth emails (or any SMTP like Postmark/SES). Alternatively, use the API-based flow with `generateLink` + Resend.
 
 **Week 1-2 Workaround** (if >4 signups/hour expected):
 
-1. Disable Supabase email verification in auth settings
-2. Use Resend for all auth emails (no rate limit)
-3. Implement custom verification flow:
+1. Option A (Recommended): Configure Resend SMTP in Supabase for auth emails.
+   - SMTP host: `smtp.resend.com`
+   - Ports: `465, 587, 2465, 2587`
+   - Username: `resend`
+   - Password: your `RESEND_API_KEY`
+   - Rate limit: default ≈ 30 auth emails/hour (configurable via Supabase Management API)
+2. Option B: Keep Supabase link generation and send via Resend API. Implement custom verification flow:
 
 ```typescript
 // app/api/auth/register/route.ts

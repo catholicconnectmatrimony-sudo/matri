@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 - Single source of truth for profile fields, validation, and phasing to keep AI implementation simple.
-- Aligns with TECH-STACK (frontend-first, Zod Week 3+, Cloudflare R2 media, vertical slices).
+- Aligns with TECH-STACK (frontend-first, Zod Week 3+, Cloudinary media, vertical slices).
 - All communities are treated equally - community pages are auto-generated from database.
 
 ## 2. Condition Schema (standardized)
@@ -122,12 +122,12 @@ Defer addresses (present/permanent) to later phase to reduce PII in MVP.
 | family_values | Family Values |  | dropdown | P2 | Traditional/Moderate/Liberal |
 | manglik_status | Manglik Status |  | dropdown | P1 (Hindu) | Yes/No/Don't know/NA |
 
-## 10. Photos (Week 3+; Cloudflare R2)
-- profile_photo: image_upload (required before browsing others), client-side compression, max 15MB.
+## 10. Photos (Week 3+; Cloudinary)
+- profile_photo: image_upload (recommended early), max 15MB. Cloudinary optimizes server-side.
 - album_photos: image_upload_multi (max 9, max 15MB each).
 - family_group_photos: image_upload_multi (max 3, max 15MB each).
 - privacy: Visible To All | Visible To Interest Sent or Accepted | Hide Photos (with sub-options).
-- Storage: Vercel API → R2 private bucket; DB saves `storage_key`; access via signed URLs.
+- Storage: Vercel API → Cloudinary; DB saves `public_id` (provider-agnostic). Delivery via Cloudinary CDN/transformations.
 
 ## 11. Partner Preferences (Optional at creation; add nudges later)
 - All preference fields optional; UI supports “Any=Select All” behavior (not stored as literal “Any”).

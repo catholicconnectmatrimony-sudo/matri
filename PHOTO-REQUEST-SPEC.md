@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-Simple feature to allow users to request photos from profiles that don't have any photos uploaded yet. This encourages profile completion and improves user engagement.
+Simple feature to allow users to request photos from profiles that don't have any photos uploaded yet. Users can browse profiles even without photos; when a profile has zero approved photos, surface a "Request Photo" CTA. This encourages profile completion and improves user engagement.
 
 ---
 
 ## 2. MVP Scope
 
-- Show "Request Photo" button when viewing a profile that has **zero approved photos**
+- Users can browse profiles without photos; show a "Request Photo" button when viewing a profile that has **zero approved photos**
 - When clicked, send a photo request notification to the profile owner
 - Track photo requests in database (prevent duplicate requests)
 - Simple notification system (email + in-app)
@@ -21,7 +21,7 @@ Simple feature to allow users to request photos from profiles that don't have an
 
 1. User A views User B's profile
 2. System checks if User B has any approved photos
-3. If **zero photos** → Show "Request Photo" button
+3. If **zero photos** → Show "Request Photo" button (browsing permitted regardless of photo presence)
 4. If **has photos** → Show photos (respecting privacy settings)
 5. User A clicks "Request Photo"
 6. System checks if request already exists

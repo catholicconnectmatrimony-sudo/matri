@@ -18,7 +18,7 @@
 | State/Data | **TanStack Query v5 + Zustand** | Caching, background refetch, offline revalidation, state management (introduce Zustand in Week 3-4 as needed) |
 | Validation | **Zod + React Hook Form** | Type-safe schemas, granular form control (introduce Zod in Week 3+) |
 | Authentication | **Supabase Auth** | Email/password only for MVP; defer phone OTP/OAuth to Phase 2 |
-| Image Handling | **Cloudinary** | Automatic optimization, resizing, format conversion (WebP/AVIF), built-in CDN, watermarking, transformations; mature service with excellent docs (setup in Week 3) |
+| Image Handling | **Cloudinary** | Automatic optimization, resizing, format conversion (WebP/AVIF), built-in CDN, watermarking, transformations; mature service with excellent docs (setup in Week 3). Standardized as the sole storage provider for MVP. |
 | Notifications | **Supabase Realtime + Email** | Real-time notifications via Supabase Realtime, email fallback |
 
 ## 3. Mobile Apps
@@ -80,7 +80,7 @@
 ### 6.1 MVP Photo Upload Flow
 1. Signup (email/password) → email verification.
 2. Complete basic profile (name, age, gender, religion, primary community).
-3. Users can browse profiles immediately (no photo required).
+3. Users can browse profiles immediately (no photo required). When a profile has zero photos, show the "Request Photo" CTA and related empty state.
 4. Other users can request photos from profiles that don't have any photos yet.
 
 #### 6.1.1 Photo Upload UX Copy
@@ -109,7 +109,10 @@ The user will be notified to upload photos.
 > **Implementation note (Week 6):** Razorpay webhooks must be idempotent. Verify the `x-razorpay-signature` before processing, upsert a `payment_events` record keyed by `razorpay_payment_id`, and respond `200` on duplicates. This prevents early/double notifications from activating subscriptions twice.
 
 ## 8. Communications
-- **Email**: Resend (transactional templates, interest alerts)
+- **Email**: Supabase (auth emails via Resend SMTP) + Resend (transactional/notifications via API: interests, digests, admin alerts)
+   - Resend SMTP (for Supabase Auth): host `smtp.resend.com`, ports `465, 587, 2465, 2587`, username `resend`, password = `RESEND_API_KEY`
+   - Rate limits: Supabase custom SMTP defaults to ~30 auth emails/hour (configurable via Management API)
+   - Pricing: Resend free tier ≈ 3,000 emails/month; paid ≈ $20/month for 50k (subject to provider updates)
   - Sender: noreply@matri.naveevo.com (subdomain for $0 extra cost)
   - Reply-to: support@matri.naveevo.com
   - DNS: SPF, DKIM, DMARC configured
@@ -184,7 +187,7 @@ STORAGE_CONFIG = {
 ### **13.2 Photo Upload Limits (Revised)**
 ```typescript
 MAX_UPLOAD_SIZES = {
-  photo: '15MB',        // Increased from 10MB - client-side compression
+  photo: '15MB',        // Increased from 10MB; Cloudinary optimizes server-side
   horoscope: '3MB',     // PDF, JPG, PNG - increased from 1MB
   document: '5MB'       // Future use - increased from 2MB
 }
@@ -209,8 +212,10 @@ CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   profile_id VARCHAR(20) UNIQUE NOT NULL, -- CCM001234 format
-  name VARCHAR(100) NOT NULL,
-  age INTEGER NOT NULL,
+  full_name VARCHAR(100) NOT NULL,
+  date_of_birth DATE NOT NULL,
+  -- Derived age for convenience (years)
+  age INTEGER GENERATED ALWAYS AS (date_part('year', age(date_of_birth))) STORED,
   gender VARCHAR(10) NOT NULL,
   community VARCHAR(50) NOT NULL,
   sub_community VARCHAR(50),

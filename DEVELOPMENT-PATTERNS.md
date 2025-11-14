@@ -125,16 +125,14 @@ if (error) {
 
 ---
 
-## 📤 FILE UPLOAD PATTERNS (Cloudflare R2)
+## 📤 FILE UPLOAD PATTERNS (Cloudinary)
 
 ### **Client-Side Upload Flow**
 ```typescript
 // components/PhotoUpload.tsx
 'use client'
 import { useState } from 'react'
-import imageCompression from 'browser-image-compression'
-
-export function PhotoUpload({ onUpload }: { onUpload: (url: string) => void }) {
+export function PhotoUpload({ onUpload }: { onUpload: (publicId: string) => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -143,16 +141,8 @@ export function PhotoUpload({ onUpload }: { onUpload: (url: string) => void }) {
     setError(null)
 
     try {
-      // 1. Compress client-side
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 1200,
-        useWebWorker: true
-      })
-
-      // 2. Upload via API
       const formData = new FormData()
-      formData.append('photo', compressed, file.name)
+      formData.append('photo', file, file.name)
 
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
@@ -164,8 +154,8 @@ export function PhotoUpload({ onUpload }: { onUpload: (url: string) => void }) {
         throw new Error(result.error || 'Upload failed')
       }
 
-      const { url } = await response.json()
-      onUpload(url)
+      const { public_id } = await response.json()
+      onUpload(public_id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -191,18 +181,14 @@ export function PhotoUpload({ onUpload }: { onUpload: (url: string) => void }) {
 ### **Server-Side Upload Handler**
 ```typescript
 // app/api/photos/upload/route.ts
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { v2 as cloudinary } from 'cloudinary'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 })
 
 export async function POST(request: Request) {
@@ -221,50 +207,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Generate unique filename
-    const filename = `${user.id}/${Date.now()}-${file.name}`
-    
-    // Upload to R2
     const buffer = Buffer.from(await file.arrayBuffer())
-    await r2Client.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
-      Key: filename,
-      Body: buffer,
-      ContentType: file.type,
-    }))
+
+    const uploadResult = await new Promise<cloudinary.UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream({
+        folder: `profiles/${user.id}`,
+        overwrite: false,
+        resource_type: 'image',
+      }, (error, result) => {
+        if (error) return reject(error)
+        if (!result) return reject(new Error('No result from Cloudinary'))
+        resolve(result)
+      })
+      stream.end(buffer)
+    })
+
+    const { public_id, bytes, format, secure_url } = uploadResult
 
     // Save metadata to database
     const { data: photo, error } = await supabase
       .from('photos')
       .insert({
         profile_id: user.id, // Assuming profile_id = user_id for MVP
-        filename,
-        storage_path: filename,
-        file_size: file.size,
-        mime_type: file.type,
-        is_approved: true // Auto-approve for MVP
+        filename: file.name,
+        original_name: file.name,
+        file_size: bytes,
+        mime_type: `image/${format}`,
+        public_id,
+        is_approved: true, // Auto-approve for MVP
+        is_primary: false,
       })
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to save metadata' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to save photo metadata' }, { status: 500 })
     }
-
-    // Generate signed URL for viewing
-    const signedUrl = await getSignedUrl(
-      r2Client,
-      new GetObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
-        Key: filename,
-      }),
-      { expiresIn: 3600 } // 1 hour
-    )
 
     return NextResponse.json({ 
       id: photo.id,
-      url: signedUrl,
-      storage_path: filename
+      public_id,
+      url: secure_url
     })
   } catch (error) {
     console.error('Upload error:', error)
@@ -631,6 +614,47 @@ export async function POST(request: Request) {
 ---
 
 ## 📧 EMAIL PATTERNS (Resend)
+> Auth emails (verification, password reset, magic links) are sent by Supabase's built-in mailer. Do not duplicate these with Resend. Use Resend for all non-auth notifications (interests, reminders, digests, admin alerts).
+
+### **Alternative: Use Supabase generateLink + Resend API for auth emails**
+
+If you prefer Resend for auth emails, do not configure it as SMTP (Resend is API-only). Instead, generate the secure link in Supabase and send via Resend:
+
+```typescript
+// app/api/auth/send-email/route.ts
+import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const resend = new Resend(process.env.RESEND_API_KEY!)
+
+export async function POST(req: Request) {
+  const { email, type, redirectTo } = await req.json()
+
+  // 1) Generate link via Supabase
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type, // 'signup' | 'magiclink' | 'recovery'
+    email,
+    options: { redirectTo }
+  })
+  if (error) throw error
+
+  // 2) Send via Resend
+  await resend.emails.send({
+    from: 'noreply@matri.naveevo.com',
+    to: email,
+    subject: type === 'recovery' ? 'Reset your password' : 'Verify your email',
+    html: `<a href="${data?.redirect_to}">Continue</a>`
+  })
+
+  return Response.json({ ok: true })
+}
+```
+
+Notes:
+- Keep auth mail templates minimal; the secure link comes from Supabase.
+- Add rate limiting and dedupe on this endpoint to avoid spam.
+- Prefer SMTP providers (Postmark/SES) in Supabase if you want higher limits without custom endpoints.
 
 ### **Send Email**
 ```typescript
@@ -725,4 +749,97 @@ export type ProfileFormData = z.infer<typeof profileSchema>
 
 **Last Updated**: November 2025  
 **Usage**: Reference this document when building features to maintain consistency
+
+### **Auth emails via Supabase + Resend SMTP (recommended for simplicity)**
+
+Configure Resend SMTP in Supabase so built-in flows send auth emails without code changes:
+
+- SMTP host: `smtp.resend.com`
+- Ports: `465, 587, 2465, 2587`
+- Username: `resend`
+- Password: your `RESEND_API_KEY`
+- Rate limits: Supabase custom SMTP defaults to ~30 auth emails/hour; adjust via Management API if needed.
+
+Notes:
+- Keep non-auth notifications (welcome, interest, digests) on Resend API with React Email templates.
+- Ensure domain is verified in Resend (SPF/DKIM/DMARC) for deliverability.
+
+## 🟢 MVP Simplified Mode
+
+Goal: minimize moving parts so a single developer (AI) can ship fast and keep maintenance effortless.
+
+### Principles
+- Prefer server-side data fetching (Next.js RSC/SSR) for read-mostly pages.
+- Use TanStack Query only for interactive modules with frequent mutations: Interests, Photo Requests, Payments.
+- Avoid global state initially; use local state + minimal context. Add Zustand only if shared non-server state becomes painful.
+- Validate at boundaries: use Zod for API payloads and critical forms; use native/inline checks for trivial forms.
+- Centralize fetch utilities and query keys to avoid ad-hoc code.
+
+### Minimal Data Access Helpers
+```ts
+// lib/api.ts (reference snippet)
+export async function api(path: string, init?: RequestInit) {
+  const res = await fetch(`/api${path}` , { ...init, headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) } })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`API ${path} failed: ${res.status} ${text}`)
+  }
+  return res.json()
+}
+
+// lib/q.ts (query keys)
+export const q = {
+  profile: (id: string) => ['profile', id],
+  search: (params: Record<string, unknown>) => ['search', params],
+  interests: {
+    byUser: (userId: string) => ['interests', 'byUser', userId],
+  },
+  photoRequests: {
+    byProfile: (profileId: string) => ['photoRequests', profileId],
+  },
+  payments: {
+    byUser: (userId: string) => ['payments', userId],
+  },
+}
+```
+
+### TanStack Query Usage (targeted)
+```ts
+// Example: interactive profile view
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { q } from '@/lib/q'
+
+function Profile({ id }: { id: string }) {
+  const qc = useQueryClient()
+  const { data, isLoading } = useQuery({ queryKey: q.profile(id), queryFn: () => api(`/profiles/${id}`) })
+
+  const interest = useMutation({
+    mutationFn: () => api(`/interests`, { method: 'POST', body: JSON.stringify({ profileId: id }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: q.profile(id) })
+  })
+
+  if (isLoading) return <div>Loading...</div>
+  return <button onClick={() => interest.mutate()}>Send Interest</button>
+}
+```
+
+### Validation Strategy
+- Zod schemas for API routes and critical forms (auth, profile update, payments).
+- Keep trivial forms lean: HTML5 validation + simple checks.
+- Reuse server-side Zod schemas on client when possible to avoid duplication.
+
+### Email Strategy (Simplified)
+- Auth emails: Supabase + Resend SMTP (zero code: verification/reset/magic link).
+- Notifications: Resend API with React Email templates.
+- Verify domain (SPF/DKIM/DMARC) once; use consistent `from` address.
+
+### Media & Payments (Quick)
+- Photos: Cloudinary direct upload (store `public_id`, serve via CDN). Show "Request Photo" when zero approved photos.
+- Payments: Razorpay minimal integration; server verifies via webhook, client uses lightweight checkout.
+
+### When to Add Complexity
+- Introduce Zustand only if multiple routes need shared, non-cached UI state.
+- Expand TanStack Query beyond the targeted modules when manual fetching becomes repetitive.
+- Grow Zod coverage as forms become multi-step or require rich validation.
 

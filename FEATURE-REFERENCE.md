@@ -201,12 +201,12 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Photo Upload** | ✅ | P0 | Drag/drop uploader with crop preview and reorder |
 | **Photo Slots by Plan** | ✅ | P0 | Free: 1 profile + 1 album; Paid: 1 profile + 9 album + 3 family/group |
 | **Family / Group Album** | ✅ | P0 | Dedicated slot bucket (3 photos) for group shots |
-| **Photo Upload Requirement** | ✅ | P0 | Cannot browse without ≥1 photo |
+| **Photo Upload Requirement** | ✅ | P0 | Browsing allowed without photos; show "Request Photo" CTA |
 | **Photo Auto-Approval** | ✅ | P0 | Photos publish instantly; admins post-moderate flagged items |
 | **Flag Review Queue** | ✅ | P1 | Queue of flagged/reported photos for manual review |
 | **Rejection Reasons** | ✅ | P1 | Blurry, Inappropriate, No Face, Fake |
 | **User Notification on Rejection** | ✅ | P1 | Email user with reason, allow re-upload |
-| **Profile Visibility Lock** | ✅ | P0 | Profile not visible until ≥1 photo uploaded |
+| **Profile Visibility Lock** | ❌ | P2 | Removed from MVP; profiles are visible even without photos |
 | **Photo Privacy Settings** | ✅ | P1 | Everyone/Premium/Sent/Accepted/Request |
 | **Per-Photo Privacy** | ✅ | P1 | Different levels per photo |
 | **Private Photos Album** | ✅ | P1 | Password/access controlled |
@@ -214,7 +214,7 @@ Note: Detailed field lists, community-specific variants, and phased P0/P1/P2 bre
 | **Photo Request Notifications** | ✅ | P0 | Notify users when someone requests them to upload photos |
 | **Photo Compression** | ✅ | P1 | Automatic compression to optimize storage and loading |
 | **Photo Metadata Stripping** | ✅ | P1 | Remove EXIF data for privacy protection |
-| **Photo Backup System** | ❌ | P2 | Deferred: Not needed with Supabase reliability |
+| **Photo Backup System** | ❌ | P2 | Deferred: Not needed with Cloudinary reliability |
 | **Photo Analytics** | ❌ | P2 | Deferred: Analytics not critical for MVP |
 
 ---

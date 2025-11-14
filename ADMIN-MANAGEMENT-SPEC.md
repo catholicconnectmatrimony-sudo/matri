@@ -102,6 +102,7 @@
   - Duplicate profile detection
   - Profile comparison tool (side-by-side)
   - Bulk profile operations (approve, reject, edit, export)
+  - Policy: Profiles are visible even without photos; "Request Photo" prompts appear in user UI when a profile has zero approved photos
 
 #### **8.2 Advanced Photo Moderation Queue** (P0)
 - **Flagged Photos List** (Real-time):
